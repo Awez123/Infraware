@@ -1,3 +1,3 @@
 .terraform
 venv
-*__pycache__*
+infraware/__pycache__
