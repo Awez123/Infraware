@@ -1,0 +1,6 @@
+- id: AWS-S3-001
+  severity: HIGH
+  description: "S3 bucket has a public ACL."
+  resource: "aws_s3_bucket"
+  attribute: "acl"
+  value: "public-read"
