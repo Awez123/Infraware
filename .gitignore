@@ -1,2 +1,6 @@
 .terraform
 venv
+# Ignore the virtual environment directory
+__pycache__
+# Ignore Python cache files
+infraware/__pycache__/*
