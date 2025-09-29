@@ -1,0 +1,4 @@
+# In test-project/infraware-ignores/s3-ignores.yaml
+ignore:
+  - resource_name: "my_vulnerable_bucket"
+    reason: "This entire bucket is exempt from these scans."

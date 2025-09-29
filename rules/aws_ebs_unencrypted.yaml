@@ -1,0 +1,6 @@
+- id: AWS-EBS-001
+  severity: MEDIUM
+  description: "EBS Volume is not encrypted."
+  resource: "aws_ebs_volume"
+  attribute: "encrypted"
+  value: false

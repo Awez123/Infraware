@@ -22,3 +22,10 @@ resource "aws_s3_bucket" "my_safe_bucket" {
   bucket = "my-safe-bucket-67890-secure"
   acl    = "private"
 }
+
+# (add this to the bottom of the file)
+resource "aws_ebs_volume" "unencrypted_volume" {
+  availability_zone = "us-east-1a"
+  size              = 1
+  encrypted         = false # <-- This is the vulnerability
+}
