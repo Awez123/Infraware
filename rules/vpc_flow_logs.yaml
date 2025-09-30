@@ -1,0 +1,6 @@
+- id: AWS-VPC-001
+  severity: MEDIUM
+  description: VPC Flow Logs are not enabled.
+  resource: aws_vpc
+  attribute: enable_flow_logs
+  value: 'false'
