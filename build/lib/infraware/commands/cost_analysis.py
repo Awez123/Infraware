@@ -100,3 +100,31 @@ def tf_cost(file: str = typer.Option(..., help="Path to the Terraform .tf file."
     result = analyze_costs_with_pandas(resources)
     console.print(result)
 
+
+# New subcommand: plan
+@app.command("plan")
+def plan_cost(file: str = typer.Option(..., help="Path to the Terraform plan JSON file.")):
+    """Analyze costs from a Terraform plan JSON file."""
+    resource_costs = {
+        'aws_s3_bucket': 0.023,  # Example: $0.023 per GB-month
+        'aws_ebs_volume': 0.10,  # Example: $0.10 per GB-month
+    }
+    resources = []
+    import json
+    try:
+        with open(file, 'r') as f:
+            plan_data = json.load(f)
+    except Exception as e:
+        console.print(f"Error reading file: {e}", style="bold red")
+        raise typer.Exit(code=1)
+
+    tf_resources = plan_data.get('planned_values', {}).get('root_module', {}).get('resources', [])
+    for resource in tf_resources:
+        res_type = resource.get('type')
+        res_name = resource.get('name')
+        cost = resource_costs.get(res_type, 0.05)  # Default cost if unknown
+        resources.append({'resource': res_type, 'name': res_name, 'cost': cost})
+
+    result = analyze_costs_with_pandas(resources)
+    console.print(result)
+
