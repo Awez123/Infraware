@@ -1,3 +1,7 @@
 typer[all]
 pyyaml
 rich
+boto3
+google-cloud-billing
+azure-mgmt-costmanagement
+pandas
