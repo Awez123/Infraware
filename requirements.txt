@@ -1,11 +1,7 @@
 typer[all]
 pyyaml
-<<<<<<< HEAD
-rich
-=======
 rich
 boto3
 google-cloud-billing
 azure-mgmt-costmanagement
 pandas
->>>>>>> Ikram-hyderi
