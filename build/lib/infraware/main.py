@@ -3,11 +3,7 @@
 import typer
 
 # Import the Typer "apps" from your command files
-<<<<<<< HEAD
-from infraware.commands import scan, rules
-=======
 from infraware.commands import scan, rules, cost_analysis
->>>>>>> Ikram-hyderi
 
 app = typer.Typer(
     help="InfraWare: An IaC Security and Quality Scanner.",
@@ -21,15 +17,12 @@ app.command("scan")(scan.scan)
 # Add the 'rules' subcommand suite to the main app
 app.add_typer(rules.app, name="rules")
 
-<<<<<<< HEAD
-=======
 # Add the 'cost-analysis' subcommand suite to the main app
 app.add_typer(cost_analysis.app, name="cost-analysis")
 
 # Add the 'cost-analysis' subcommand suite to the main app
 app.add_typer(cost_analysis.app, name="cost-analysis")
 
->>>>>>> Ikram-hyderi
 
 if __name__ == "__main__":
     app()

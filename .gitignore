@@ -1,4 +1,8 @@
 .terraform
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 1263b41 (ign)
 venv
 # Ignore the virtual environment directory
 __pycache__
@@ -6,5 +10,13 @@ __pycache__
 <<<<<<< HEAD
 infraware/__pycache__/*
 =======
+<<<<<<< HEAD
 infraware/__pycache__/*
 >>>>>>> bec212d956b62e881cd0af1c94cdbf120e4530bf
+=======
+venv
+>>>>>>> 99f36f3 (ignore venv)
+=======
+infraware/__pycache__/*
+>>>>>>> 1263b41 (ign)
+>>>>>>> Ikram-hyderi
