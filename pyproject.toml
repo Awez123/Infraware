@@ -1,0 +1,18 @@
+[project]
+name = "infraware"
+version = "0.1.0"
+authors = [
+    { name="Awez Ahmed Khan", email="awezkhan786jb@gmail.com" },
+]
+description = "An IaC Security and Quality Scanner."
+readme = "README.MD"
+requires-python = ">=3.8"
+dependencies = [
+    "typer[all]",
+    "pyyaml",
+    "rich",
+]
+[project.scripts]
+infraware = "infraware.main:app"
+[tool.setuptools.packages.find]
+where = ["src"]
