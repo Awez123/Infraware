@@ -10,7 +10,7 @@ terraform {
 provider "aws" {
   region = "us-east-1"
 }
-
+# test-chagne
 # This bucket is vulnerable and should be caught by our rule
 resource "aws_s3_bucket" "my_vulnerable_bucket" {
   bucket = "my-test-bucket-12345-vulnerable"
