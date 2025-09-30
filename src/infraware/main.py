@@ -3,11 +3,11 @@
 import typer
 
 # Import the Typer "apps" from your command files
-<<<<<<< HEAD
+
 from infraware.commands import scan, rules
-=======
+
 from infraware.commands import scan, rules, cost_analysis
->>>>>>> Ikram-hyderi
+
 
 app = typer.Typer(
     help="InfraWare: An IaC Security and Quality Scanner.",
