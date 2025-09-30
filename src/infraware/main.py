@@ -22,7 +22,6 @@ app.command("scan")(scan.scan)
 app.add_typer(rules.app, name="rules")
 
 
-=======
 # Add the 'cost-analysis' subcommand suite to the main app
 app.add_typer(cost_analysis.app, name="cost-analysis")
 
