@@ -1,4 +1,4 @@
-# InfraWare 🛡️ - Your IaC Security and Quality Scanner
+# <img src="assets/InfraWare.png" alt="InfraWare Logo" width="100"> InfraWare 🛡️ - Your IaC Security and Quality Scanner
 
 InfraWare is a powerful, rule-based command-line tool designed to scan Infrastructure as Code (IaC) for security vulnerabilities, misconfigurations, and code quality issues. It analyzes Terraform plan files to provide the most accurate assessment of your planned infrastructure changes.
 
