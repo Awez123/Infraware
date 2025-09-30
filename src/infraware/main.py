@@ -21,7 +21,7 @@ app.command("scan")(scan.scan)
 # Add the 'rules' subcommand suite to the main app
 app.add_typer(rules.app, name="rules")
 
-<<<<<<< HEAD
+
 =======
 # Add the 'cost-analysis' subcommand suite to the main app
 app.add_typer(cost_analysis.app, name="cost-analysis")
@@ -29,7 +29,7 @@ app.add_typer(cost_analysis.app, name="cost-analysis")
 # Add the 'cost-analysis' subcommand suite to the main app
 app.add_typer(cost_analysis.app, name="cost-analysis")
 
->>>>>>> Ikram-hyderi
+
 
 if __name__ == "__main__":
     app()
