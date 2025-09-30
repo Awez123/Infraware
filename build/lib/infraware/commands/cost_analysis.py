@@ -73,3 +73,30 @@ def pandas_cost():
     result = analyze_costs_with_pandas(sample_data)
     console.print(result)
 
+
+# New subcommand: tf
+@app.command("tf")
+def tf_cost(file: str = typer.Option(..., help="Path to the Terraform .tf file.")):
+    """Analyze costs from a Terraform .tf file."""
+    import re
+    resource_costs = {
+        'aws_s3_bucket': 0.023,  # Example: $0.023 per GB-month
+        'aws_ebs_volume': 0.10,  # Example: $0.10 per GB-month
+    }
+    resources = []
+    try:
+        with open(file, 'r') as f:
+            content = f.read()
+    except Exception as e:
+        console.print(f"Error reading file: {e}", style="bold red")
+        raise typer.Exit(code=1)
+
+    # Simple regex to find resource blocks
+    matches = re.findall(r'resource\s+"(\w+_\w+)"\s+"([^"]+)"', content)
+    for res_type, res_name in matches:
+        cost = resource_costs.get(res_type, 0.05)  # Default cost if unknown
+        resources.append({'resource': res_type, 'name': res_name, 'cost': cost})
+
+    result = analyze_costs_with_pandas(resources)
+    console.print(result)
+
