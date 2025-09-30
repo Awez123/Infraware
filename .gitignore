@@ -3,4 +3,8 @@ venv
 # Ignore the virtual environment directory
 __pycache__
 # Ignore Python cache files
+<<<<<<< HEAD
 infraware/__pycache__/*
+=======
+infraware/__pycache__/*
+>>>>>>> bec212d956b62e881cd0af1c94cdbf120e4530bf

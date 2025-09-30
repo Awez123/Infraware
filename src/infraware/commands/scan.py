@@ -1,45 +1,13 @@
+# in infraware/commands/scan.py
+
 import json
-import yaml
 import typer
-import os
 from typing_extensions import Annotated
 
-app = typer.Typer(help="InfraWare: An IaC Security and Quality Scanner.")
+# Import our helper functions from the utils module
+from infraware.utils.file_handler import load_rules_from_directory, load_ignores_from_directory
 
-# (load_rules_from_directory function is unchanged)
-def load_rules_from_directory(rules_dir: str) -> list:
-    all_rules = []
-    typer.echo(f"Loading rules from: {rules_dir}")
-    try:
-        for filename in os.listdir(rules_dir):
-            if filename.endswith((".yaml", ".yml")):
-                filepath = os.path.join(rules_dir, filename)
-                with open(filepath, 'r') as f:
-                    rules = yaml.safe_load(f)
-                    if isinstance(rules, list):
-                        all_rules.extend(rules)
-        return all_rules
-    except Exception as e:
-        typer.secho(f"Error loading rules: {e}", fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1)
-
-# (load_ignores_from_directory function is unchanged)
-def load_ignores_from_directory(ignore_dir: str) -> list:
-    all_ignores = []
-    typer.echo(f"Loading ignores from: {ignore_dir}")
-    try:
-        for filename in os.listdir(ignore_dir):
-            if filename.endswith((".yaml", ".yml")):
-                filepath = os.path.join(ignore_dir, filename)
-                with open(filepath, 'r') as f:
-                    ignores = yaml.safe_load(f)
-                    if ignores and 'ignore' in ignores and isinstance(ignores['ignore'], list):
-                        all_ignores.extend(ignores['ignore'])
-        return all_ignores
-    except Exception as e:
-        typer.secho(f"Error loading ignores: {e}", fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1)
-
+app = typer.Typer()
 
 @app.command()
 def scan(
@@ -53,7 +21,7 @@ def scan(
     typer.echo(f"Scanning plan: {plan_file}")
     rules = load_rules_from_directory(rules_dir)
     ignored_findings = []
-    if ignore_dir and os.path.isdir(ignore_dir):
+    if ignore_dir:
         ignored_findings = load_ignores_from_directory(ignore_dir)
 
     try:
@@ -73,8 +41,6 @@ def scan(
                     resource_full_name = f"{resource.get('type')}.{resource.get('name')}"
                     is_ignored = False
                     for ignored in ignored_findings:
-                        # --- THIS IS THE CHANGED LOGIC ---
-                        # We now only check if the resource name matches.
                         if ignored['resource_name'] == resource.get('name'):
                             is_ignored = True
                             ignored_count += 1
@@ -96,6 +62,3 @@ def scan(
     
     if ignored_count > 0:
         typer.secho(f"Ignored {ignored_count} finding(s) based on ignore files.", fg=typer.colors.BLUE)
-
-if __name__ == "__main__":
-    app()

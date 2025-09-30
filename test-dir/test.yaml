@@ -1,0 +1,6 @@
+- id: test
+  severity: test
+  description: test
+  resource: test
+  attribute: test
+  value: test
