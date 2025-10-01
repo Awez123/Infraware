@@ -1,0 +1,299 @@
+# AWS Pricing Configuration
+# Prices are in USD and represent typical pricing as of 2025
+# Users can modify these values based on their specific requirements
+
+metadata:
+  provider: "aws"
+  last_updated: "2025-10-02"
+  source: "AWS Official Pricing"
+  currency: "USD"
+  confidence_scale: "1-10 (10 being most accurate)"
+  reference_url: "https://aws.amazon.com/pricing/"
+  notes: "Pricing based on on-demand instances without reserved capacity discounts"
+
+regions:
+  us-east-1:
+    name: "US East (N. Virginia)"
+    multiplier: 1.0
+  us-west-2:
+    name: "US West (Oregon)"
+    multiplier: 1.0
+  eu-west-1:
+    name: "Europe (Ireland)"
+    multiplier: 1.1
+  ap-southeast-1:
+    name: "Asia Pacific (Singapore)"
+    multiplier: 1.2
+  ap-northeast-1:
+    name: "Asia Pacific (Tokyo)"
+    multiplier: 1.15
+
+compute:
+  aws_instance:
+    metadata:
+      category: "Elastic Compute Cloud (EC2)"
+      billing_model: "hourly"
+      reference: "https://aws.amazon.com/ec2/pricing/on-demand/"
+      notes: "On-demand pricing without savings plans or reserved instances"
+    t3.micro:
+      price_per_hour: 0.0104
+      vcpu: 2
+      memory_gb: 1
+      confidence: 10
+      impact_level: "low"
+      last_verified: "2025-10-02"
+      tags: ["burstable", "general-purpose", "low-cost"]
+    t3.small:
+      price_per_hour: 0.0208
+      vcpu: 2
+      memory_gb: 2
+      confidence: 10
+      impact_level: "low"
+      last_verified: "2025-10-02"
+      tags: ["burstable", "general-purpose"]
+    t3.medium:
+      price_per_hour: 0.0416
+      vcpu: 2
+      memory_gb: 4
+      confidence: 10
+      impact_level: "medium"
+      last_verified: "2025-10-02"
+      tags: ["burstable", "general-purpose"]
+    t3.large:
+      price_per_hour: 0.0832
+      vcpu: 2
+      memory_gb: 8
+      confidence: 10
+      impact_level: "medium"
+      last_verified: "2025-10-02"
+      tags: ["burstable", "general-purpose"]
+    m5.large:
+      price_per_hour: 0.096
+      vcpu: 2
+      memory_gb: 8
+      confidence: 10
+      impact_level: "medium"
+      last_verified: "2025-10-02"
+      tags: ["general-purpose", "balanced"]
+    m5.xlarge:
+      price_per_hour: 0.192
+      vcpu: 4
+      memory_gb: 16
+      confidence: 10
+      impact_level: "high"
+      last_verified: "2025-10-02"
+      tags: ["general-purpose", "balanced"]
+    c5.large:
+      price_per_hour: 0.085
+      vcpu: 2
+      memory_gb: 4
+      confidence: 10
+      impact_level: "medium"
+      last_verified: "2025-10-02"
+      tags: ["compute-optimized", "high-performance"]
+
+storage:
+  aws_ebs_volume:
+    metadata:
+      category: "Elastic Block Store (EBS)"
+      billing_model: "monthly"
+      reference: "https://aws.amazon.com/ebs/pricing/"
+      notes: "Pricing excludes IOPS and throughput charges for gp3"
+    gp3:
+      price_per_gb_month: 0.08
+      baseline_iops: 3000
+      baseline_throughput_mb: 125
+      confidence: 10
+      impact_level: "medium"
+      last_verified: "2025-10-02"
+      tags: ["general-purpose", "ssd", "latest-generation"]
+    gp2:
+      price_per_gb_month: 0.10
+      baseline_iops: 3000
+      confidence: 10
+      impact_level: "medium"
+      last_verified: "2025-10-02"
+      tags: ["general-purpose", "ssd", "previous-generation"]
+    io2:
+      price_per_gb_month: 0.125
+      price_per_iops_month: 0.065
+      confidence: 9
+      impact_level: "high"
+      last_verified: "2025-10-02"
+      tags: ["provisioned-iops", "ssd", "high-performance"]
+  aws_s3_bucket:
+    metadata:
+      category: "Simple Storage Service (S3)"
+      billing_model: "monthly"
+      reference: "https://aws.amazon.com/s3/pricing/"
+      notes: "Storage pricing only, excludes requests and data transfer"
+    standard:
+      price_per_gb_month: 0.023
+      requests_put_per_1000: 0.005
+      requests_get_per_1000: 0.0004
+      confidence: 10
+      impact_level: "variable"
+      last_verified: "2025-10-02"
+      tags: ["frequently-accessed", "general-purpose"]
+    ia:
+      price_per_gb_month: 0.0125
+      requests_put_per_1000: 0.01
+      requests_get_per_1000: 0.001
+      confidence: 10
+      impact_level: "low"
+      last_verified: "2025-10-02"
+      tags: ["infrequent-access", "long-term-storage"]
+
+database:
+  aws_db_instance:
+    metadata:
+      category: "Relational Database Service (RDS)"
+      billing_model: "hourly"
+      reference: "https://aws.amazon.com/rds/pricing/"
+      notes: "On-demand pricing, excludes storage and backup costs"
+    db.t3.micro:
+      price_per_hour: 0.017
+      confidence: 10
+      impact_level: "low"
+      last_verified: "2025-10-02"
+      tags: ["burstable", "development", "low-cost"]
+    db.t3.small:
+      price_per_hour: 0.034
+      confidence: 10
+      impact_level: "low"
+      last_verified: "2025-10-02"
+      tags: ["burstable", "small-workloads"]
+    db.r5.large:
+      price_per_hour: 0.24
+      confidence: 10
+      impact_level: "high"
+      last_verified: "2025-10-02"
+      tags: ["memory-optimized", "production"]
+  aws_rds_cluster:
+    metadata:
+      category: "Aurora Serverless/Cluster"
+      billing_model: "hourly"
+      reference: "https://aws.amazon.com/rds/aurora/pricing/"
+      notes: "Aurora cluster pricing per Aurora Capacity Unit (ACU)"
+    aurora-mysql:
+      price_per_hour: 0.10
+      confidence: 9
+      impact_level: "medium"
+      last_verified: "2025-10-02"
+      tags: ["serverless", "mysql-compatible"]
+    aurora-postgresql:
+      price_per_hour: 0.11
+      confidence: 9
+      impact_level: "medium"
+      last_verified: "2025-10-02"
+      tags: ["serverless", "postgresql-compatible"]
+
+networking:
+  aws_vpc:
+    metadata:
+      category: "Virtual Private Cloud (VPC)"
+      billing_model: "free"
+      reference: "https://aws.amazon.com/vpc/pricing/"
+      notes: "VPC itself is free, data transfer and NAT gateways have costs"
+    price_per_month: 0.0  # VPC itself is free
+    confidence: 10
+    impact_level: "none"
+    last_verified: "2025-10-02"
+    tags: ["networking", "free-tier"]
+  aws_nat_gateway:
+    metadata:
+      category: "Network Address Translation Gateway"
+      billing_model: "hourly + data processing"
+      reference: "https://aws.amazon.com/vpc/pricing/"
+      notes: "Charged per hour + per GB of data processed"
+    price_per_hour: 0.045
+    price_per_gb_processed: 0.045
+    confidence: 10
+    impact_level: "medium"
+    last_verified: "2025-10-02"
+    tags: ["networking", "data-transfer"]
+  aws_load_balancer:
+    metadata:
+      category: "Elastic Load Balancing"
+      billing_model: "hourly + capacity units"
+      reference: "https://aws.amazon.com/elasticloadbalancing/pricing/"
+      notes: "Different pricing for ALB and NLB"
+    application:
+      price_per_hour: 0.0225
+      price_per_lcu_hour: 0.008
+      confidence: 10
+      impact_level: "medium"
+      last_verified: "2025-10-02"
+      tags: ["application-layer", "http-https"]
+    network:
+      price_per_hour: 0.0225
+      price_per_nlcu_hour: 0.006
+      confidence: 10
+      impact_level: "medium"
+      last_verified: "2025-10-02"
+      tags: ["network-layer", "tcp-udp"]
+
+containers:
+  aws_ecs_service:
+    metadata:
+      category: "Elastic Container Service (ECS)"
+      billing_model: "pay-per-use"
+      reference: "https://aws.amazon.com/fargate/pricing/"
+      notes: "Fargate pricing based on vCPU and memory allocation"
+    fargate:
+      price_per_vcpu_hour: 0.04048
+      price_per_gb_hour: 0.004445
+      confidence: 10
+      impact_level: "variable"
+      last_verified: "2025-10-02"
+      tags: ["serverless", "containers", "fargate"]
+  aws_eks_cluster:
+    metadata:
+      category: "Elastic Kubernetes Service (EKS)"
+      billing_model: "hourly"
+      reference: "https://aws.amazon.com/eks/pricing/"
+      notes: "Control plane pricing, worker nodes charged separately"
+    price_per_hour: 0.10
+    confidence: 10
+    impact_level: "fixed"
+    last_verified: "2025-10-02"
+    tags: ["kubernetes", "managed-service", "control-plane"]
+
+serverless:
+  aws_lambda_function:
+    metadata:
+      category: "AWS Lambda"
+      billing_model: "pay-per-request + compute time"
+      reference: "https://aws.amazon.com/lambda/pricing/"
+      notes: "First 1M requests per month are free"
+    price_per_request_million: 0.20
+    price_per_gb_second: 0.0000166667
+    confidence: 10
+    impact_level: "variable"
+    last_verified: "2025-10-02"
+    tags: ["serverless", "event-driven", "pay-per-use"]
+
+security:
+  aws_security_group:
+    metadata:
+      category: "Security Groups"
+      billing_model: "free"
+      reference: "https://aws.amazon.com/vpc/pricing/"
+      notes: "Security groups are included with VPC at no charge"
+    price_per_month: 0.0  # Security groups are free
+    confidence: 10
+    impact_level: "none"
+    last_verified: "2025-10-02"
+    tags: ["security", "firewall", "free"]
+  aws_kms_key:
+    metadata:
+      category: "Key Management Service (KMS)"
+      billing_model: "monthly + per-request"
+      reference: "https://aws.amazon.com/kms/pricing/"
+      notes: "Customer managed keys pricing"
+    price_per_month: 1.0
+    price_per_10k_requests: 0.03
+    confidence: 10
+    impact_level: "low"
+    last_verified: "2025-10-02"
+    tags: ["encryption", "key-management", "security"]
