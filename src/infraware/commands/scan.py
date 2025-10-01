@@ -1,4 +1,4 @@
-# in infraware/commands/scan.py
+# in src/infraware/commands/scan.py
 
 import json
 import typer
@@ -13,12 +13,16 @@ app = typer.Typer()
 def scan(
     plan_file: Annotated[str, typer.Argument(help="Path to the terraform plan JSON file.")],
     rules_dir: Annotated[str, typer.Option("--rules-dir", help="Path to the directory containing YAML rule files.")] = "rules",
-    ignore_dir: Annotated[str, typer.Option("--ignore-dir", help="Path to a directory containing ignore files.")] = None
+    ignore_dir: Annotated[str, typer.Option("--ignore-dir", help="Path to a directory containing ignore files.")] = None,
+    # --- New option for output format ---
+    output: Annotated[str, typer.Option("--output", help="Output format ('console' or 'json').")] = "console"
 ):
     """
     Scans a Terraform plan file for vulnerabilities based on a set of rules.
     """
-    typer.echo(f"Scanning plan: {plan_file}")
+    if output == 'console':
+        typer.echo(f"Scanning plan: {plan_file}")
+
     rules = load_rules_from_directory(rules_dir)
     ignored_findings = []
     if ignore_dir:
@@ -29,7 +33,8 @@ def scan(
     except Exception as e:
         typer.secho(f"Error reading plan file: {e}", fg=typer.colors.RED, err=True); raise typer.Exit(code=1)
 
-    vulnerabilities_found = 0
+    # --- New list to collect findings before printing ---
+    vulnerabilities = []
     ignored_count = 0
     resources = plan_data.get('planned_values', {}).get('root_module', {}).get('resources', [])
     
@@ -43,22 +48,37 @@ def scan(
                     for ignored in ignored_findings:
                         if ignored['resource_name'] == resource.get('name'):
                             is_ignored = True
-                            ignored_count += 1
                             break
                     
-                    if not is_ignored:
-                        vulnerabilities_found += 1
-                        typer.secho("--- VULNERABILITY FOUND! ---", fg=typer.colors.RED, bold=True)
-                        typer.echo(f"  Rule ID:      {rule['id']}")
-                        typer.secho(f"  Severity:     {rule['severity']}", fg=typer.colors.YELLOW)
-                        typer.echo(f"  Description:  {rule['description']}")
-                        typer.echo(f"  Resource:     {resource_full_name}\n")
+                    if is_ignored:
+                        ignored_count += 1
+                    else:
+                        # --- Instead of printing, add the finding to our list ---
+                        finding = {
+                            "rule_id": rule['id'],
+                            "severity": rule['severity'],
+                            "description": rule['description'],
+                            "resource_name": resource_full_name
+                        }
+                        vulnerabilities.append(finding)
 
-    typer.secho("--- Scan Summary ---", bold=True)
-    if vulnerabilities_found > 0:
-        typer.secho(f"Found {vulnerabilities_found} vulnerability(s).", fg=typer.colors.RED)
-    else:
-        typer.secho("No new vulnerabilities found. Good job!", fg=typer.colors.GREEN)
-    
-    if ignored_count > 0:
-        typer.secho(f"Ignored {ignored_count} finding(s) based on ignore files.", fg=typer.colors.BLUE)
+    # --- New section to handle output at the end ---
+    if output == "json":
+        # Print the findings as a JSON array
+        print(json.dumps(vulnerabilities, indent=2))
+    else: # Default to console output
+        for finding in vulnerabilities:
+            typer.secho("--- VULNERABILITY FOUND! ---", fg=typer.colors.RED, bold=True)
+            typer.echo(f"  Rule ID:      {finding['rule_id']}")
+            typer.secho(f"  Severity:     {finding['severity']}", fg=typer.colors.YELLOW)
+            typer.echo(f"  Description:  {finding['description']}")
+            typer.echo(f"  Resource:     {finding['resource_name']}\n")
+        
+        typer.secho("--- Scan Summary ---", bold=True)
+        if vulnerabilities:
+            typer.secho(f"Found {len(vulnerabilities)} vulnerability(s).", fg=typer.colors.RED)
+        else:
+            typer.secho("No new vulnerabilities found. Good job!", fg=typer.colors.GREEN)
+        
+        if ignored_count > 0:
+            typer.secho(f"Ignored {ignored_count} finding(s) based on ignore files.", fg=typer.colors.BLUE)

@@ -3,7 +3,7 @@
 import typer
 
 # Import the Typer "apps" from your command files
-from infraware.commands import scan, rules
+from infraware.commands import scan, rules, cost
 
 app = typer.Typer(
     help="InfraWare: An IaC Security and Quality Scanner.",
@@ -17,6 +17,7 @@ app.command("scan")(scan.scan)
 # Add the 'rules' subcommand suite to the main app
 app.add_typer(rules.app, name="rules")
 
+app.add_typer(cost.app, name="cost")
 
 if __name__ == "__main__":
     app()
