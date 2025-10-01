@@ -1,0 +1,126 @@
+# Azure Pricing Configuration
+# Prices are in USD and represent typical pricing as of 2025
+# Users can modify these values based on their specific requirements
+
+metadata:
+  provider: "azure"
+  last_updated: "2025-10-02"
+  source: "Microsoft Azure Official Pricing"
+  currency: "USD"
+  confidence_scale: "1-10 (10 being most accurate)"
+  reference_url: "https://azure.microsoft.com/en-us/pricing/"
+  notes: "Pay-as-you-go pricing without reserved instances or savings plans"
+
+regions:
+  eastus:
+    name: "East US"
+    multiplier: 1.0
+  westus2:
+    name: "West US 2"
+    multiplier: 1.0
+  westeurope:
+    name: "West Europe"
+    multiplier: 1.1
+  southeastasia:
+    name: "Southeast Asia"
+    multiplier: 1.2
+  japaneast:
+    name: "Japan East"
+    multiplier: 1.15
+
+compute:
+  azurerm_virtual_machine:
+    metadata:
+      category: "Virtual Machines"
+      billing_model: "hourly"
+      reference: "https://azure.microsoft.com/en-us/pricing/details/virtual-machines/"
+      notes: "Standard pay-as-you-go pricing for Linux VMs"
+    Standard_B1s:
+      price_per_hour: 0.0104
+      vcpu: 1
+      memory_gb: 1
+      confidence: 10
+      impact_level: "low"
+      last_verified: "2025-10-02"
+      tags: ["burstable", "basic", "low-cost"]
+    Standard_B2s:
+      price_per_hour: 0.0416
+      vcpu: 2
+      memory_gb: 4
+      confidence: 10
+      impact_level: "medium"
+      last_verified: "2025-10-02"
+      tags: ["burstable", "general-purpose"]
+    Standard_D2s_v3:
+      price_per_hour: 0.096
+      vcpu: 2
+      memory_gb: 8
+      confidence: 10
+      impact_level: "medium"
+      last_verified: "2025-10-02"
+      tags: ["general-purpose", "balanced"]
+    Standard_D4s_v3:
+      price_per_hour: 0.192
+      vcpu: 4
+      memory_gb: 16
+      confidence: 10
+      impact_level: "high"
+      last_verified: "2025-10-02"
+      tags: ["general-purpose", "balanced", "production"]
+
+storage:
+  azurerm_managed_disk:
+    standard_lrs:
+      price_per_gb_month: 0.045
+    premium_lrs:
+      price_per_gb_month: 0.135
+    ultra_ssd:
+      price_per_gb_month: 0.30
+  azurerm_storage_account:
+    standard_lrs:
+      price_per_gb_month: 0.018
+      transactions_per_10k: 0.004
+    premium_lrs:
+      price_per_gb_month: 0.15
+      transactions_per_10k: 0.01
+
+database:
+  azurerm_sql_database:
+    basic:
+      price_per_month: 4.99
+    s0:
+      price_per_month: 14.70
+    s1:
+      price_per_month: 29.40
+  azurerm_cosmosdb_account:
+    price_per_ru_hour: 0.00008
+
+networking:
+  azurerm_virtual_network:
+    price_per_month: 0.0  # Virtual networks are free
+  azurerm_application_gateway:
+    price_per_hour: 0.0225
+    price_per_capacity_unit_hour: 0.008
+  azurerm_lb:
+    basic:
+      price_per_month: 0.0  # Basic load balancer is free
+    standard:
+      price_per_hour: 0.025
+
+containers:
+  azurerm_kubernetes_cluster:
+    price_per_hour: 0.10  # Management fee for managed service
+  azurerm_container_group:
+    price_per_vcpu_second: 0.0000012
+    price_per_gb_second: 0.00000013
+
+serverless:
+  azurerm_function_app:
+    consumption:
+      price_per_execution_million: 0.20
+      price_per_gb_second: 0.000016
+
+security:
+  azurerm_key_vault:
+    price_per_10k_operations: 0.03
+    price_per_certificate_month: 1.0

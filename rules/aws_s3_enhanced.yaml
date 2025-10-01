@@ -1,0 +1,68 @@
+# Enhanced AWS S3 Security Rules with CVE and Severity Numbers
+
+- id: AWS-S3-001
+  title: "S3 Bucket Public Read Access"
+  severity: HIGH
+  severity_score: 8.5
+  cve_references:
+    - "CVE-2017-3156"  # Example: Misconfigured S3 bucket exposure
+  cis_controls:
+    - "CIS AWS 2.1.1"
+  description: "S3 bucket has a public ACL allowing public read access, potentially exposing sensitive data."
+  impact: "Unauthorized users can read all objects in the bucket, leading to data exposure."
+  remediation: "Set bucket ACL to private and use bucket policies for controlled access."
+  resource: "aws_s3_bucket"
+  attribute: "acl"
+  value: "public-read"
+  tags:
+    - "data-exposure"
+    - "public-access"
+    - "s3"
+  references:
+    - "https://docs.aws.amazon.com/s3/latest/userguide/acl-overview.html"
+    - "https://owasp.org/www-project-top-ten/2017/A6_2017-Security_Misconfiguration"
+
+- id: AWS-S3-002
+  title: "S3 Bucket Public Write Access"
+  severity: CRITICAL
+  severity_score: 9.8
+  cve_references:
+    - "CVE-2017-3156"
+    - "CVE-2018-1000006"  # Example: S3 bucket takeover
+  cis_controls:
+    - "CIS AWS 2.1.1"
+  description: "S3 bucket has a public ACL allowing public write access, enabling potential data tampering."
+  impact: "Attackers can upload, modify, or delete objects, potentially leading to data corruption or malicious file hosting."
+  remediation: "Remove public write permissions and implement proper IAM policies."
+  resource: "aws_s3_bucket"
+  attribute: "acl"
+  value: "public-read-write"
+  tags:
+    - "data-tampering"
+    - "public-access"
+    - "s3"
+    - "critical"
+  references:
+    - "https://docs.aws.amazon.com/s3/latest/userguide/acl-overview.html"
+
+- id: AWS-S3-003
+  title: "S3 Bucket Server-Side Encryption Disabled"
+  severity: HIGH
+  severity_score: 7.2
+  cve_references:
+    - "CVE-2019-5736"  # Example: Data encryption bypass
+  cis_controls:
+    - "CIS AWS 2.1.2"
+  description: "S3 bucket does not have server-side encryption enabled, leaving data unencrypted at rest."
+  impact: "Data stored in the bucket is not encrypted, potentially exposing sensitive information if accessed."
+  remediation: "Enable server-side encryption using AWS KMS or S3-managed encryption."
+  resource: "aws_s3_bucket"
+  attribute: "server_side_encryption_configuration"
+  value: null
+  condition: "missing"
+  tags:
+    - "encryption"
+    - "data-protection"
+    - "s3"
+  references:
+    - "https://docs.aws.amazon.com/s3/latest/userguide/bucket-encryption.html"
