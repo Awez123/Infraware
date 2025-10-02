@@ -1,0 +1,69 @@
+- id: SECRET-001
+  severity: CRITICAL
+  severity_score: 9.5
+  title: "Hardcoded AWS Access Key"
+  description: "Hardcoded AWS access key found in infrastructure code"
+  impact: "Exposed AWS credentials can lead to unauthorized access to AWS resources"
+  remediation: "Remove hardcoded credentials and use IAM roles or AWS Secrets Manager"
+  resource: "aws_instance"
+  attribute: "user_data"
+  condition: "contains_pattern"
+  value: "AKIA[0-9A-Z]{16}"
+  cve_references: []
+  cis_controls: ["CIS-16"]
+  tags: ["secret", "aws", "credentials"]
+  references:
+    - "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
+    - "https://aws.amazon.com/secrets-manager/"
+
+- id: SECRET-002
+  severity: HIGH
+  severity_score: 8.0
+  title: "Hardcoded Database Password"
+  description: "Hardcoded database password found in infrastructure configuration"
+  impact: "Exposed database credentials can lead to data breaches"
+  remediation: "Use parameter store, secrets manager, or environment variables"
+  resource: "aws_db_instance"
+  attribute: "password"
+  condition: "not_ref_or_parameter"
+  value: null
+  cve_references: []
+  cis_controls: ["CIS-16"]
+  tags: ["secret", "database", "password"]
+  references:
+    - "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_BestPractices.Security.html"
+
+- id: CONTAINER-001
+  severity: HIGH
+  severity_score: 8.5
+  title: "Container Running as Root"
+  description: "Container is configured to run as root user"
+  impact: "Running containers as root increases attack surface and privilege escalation risks"
+  remediation: "Configure container to run as non-root user"
+  resource: "kubernetes_deployment"
+  attribute: "spec.template.spec.containers[*].securityContext.runAsUser"
+  condition: "equals"
+  value: 0
+  cve_references: []
+  cis_controls: ["CIS-5"]
+  tags: ["container", "kubernetes", "privilege"]
+  references:
+    - "https://kubernetes.io/docs/concepts/security/pod-security-standards/"
+
+- id: LICENSE-001
+  severity: MEDIUM
+  severity_score: 6.0
+  title: "GPL License Detected"
+  description: "GPL licensed dependency detected which may have copyleft requirements"
+  impact: "GPL license requires derivative works to be open source"
+  remediation: "Review GPL license obligations or replace with permissive licensed alternative"
+  resource: "dependency"
+  attribute: "license"
+  condition: "contains"
+  value: "GPL"
+  cve_references: []
+  cis_controls: []
+  tags: ["license", "compliance", "gpl"]
+  references:
+    - "https://www.gnu.org/licenses/gpl-3.0.en.html"
+    - "https://choosealicense.com/"
