@@ -17,3 +17,4 @@ src/infraware/utils/__init__.py
 src/infraware/utils/file_handler.py
 src/infraware/utils/file_parsers.py
 src/infraware/utils/pricing_config.py
+src/infraware/utils/vulnerability_scanner.py
