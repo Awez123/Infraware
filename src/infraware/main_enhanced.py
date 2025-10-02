@@ -11,18 +11,73 @@ from typing import Optional
 
 # Import specific commands instead of the problematic apps
 from infraware.commands.scan import scan
-from infraware.commands.cost_analysis import cost_analysis_command
 
 app = typer.Typer(
     help="InfraWare: An IaC Security and Quality Scanner with CVE Database and Container Security.",
     add_completion=False
 )
 
+@app.command("welcome")
+def welcome():
+    """Show InfraWare branding and available commands."""
+    print("""
+    ██ ███   ██ ███████ ██████   █████  ██    ██  █████  ██████  ███████
+    ██ ████  ██ ██      ██   ██ ██   ██ ██    ██ ██   ██ ██   ██ ██     
+    ██ ██ ██ ██ █████   ██████  ███████ ██ █  ██ ███████ ██████  █████  
+    ██ ██  ████ ██      ██   ██ ██   ██ ██████ ██ ██   ██ ██   ██ ██     
+    ██ ██   ███ ██      ██   ██ ██   ██  ███████  ██   ██ ██   ██ ███████
+    """)
+    print("\n InfraWare - Enterprise-Grade Infrastructure Security Scanner")
+    print("\n Enhanced Features:")
+    print("  - Secret Detection (API keys, passwords, tokens)")
+    print("  - License Compliance (SPDX, CycloneDX compatible)")
+    print("  - Dependency Vulnerability Scanning")
+    print("  - SBOM Generation (CycloneDX, SPDX formats)")
+    print("  - Enhanced CloudFormation Support")
+    print("  - Multi-language Support (Node.js, Python, Go)")
+    print("  - Enterprise-grade CVE Database (180K+ vulnerabilities)")
+    print("  - Container Security Scanning (Images, Dockerfiles, Runtime)")
+    print("  - Real-time Vulnerability Intelligence")
+
 # Add the existing scan command
 app.command("scan")(scan)
 
-# Add cost analysis command
-app.command("cost-analysis")(cost_analysis_command)
+# Add cost analysis command directly
+@app.command("cost-analysis")
+def cost_analysis_cmd(
+    plan_file: str = typer.Argument(help="Path to the Terraform plan or CloudFormation template"),
+    provider: str = typer.Option("aws", "--provider", help="Cloud provider (aws, gcp, azure)"),
+    region: str = typer.Option("us-east-1", "--region", help="Cloud region"),
+    hours: int = typer.Option(730, "--hours", help="Hours to calculate costs for"),
+    output_format: str = typer.Option("table", "--format", help="Output format (table, json)")
+):
+    """Analyze cloud infrastructure costs."""
+    console = Console()
+    console.print(f"Analyzing costs for: [cyan]{plan_file}[/cyan]")
+    
+    try:
+        from infraware.commands.cost_analysis import CostAnalyzer
+        
+        # Analyze infrastructure costs
+        analyzer = CostAnalyzer()
+        cost_data = analyzer.analyze_file_costs(plan_file, provider, region)
+        
+        if output_format.lower() == "json":
+            console.print_json(data=cost_data)
+        else:
+            console.print(f"\n[bold green]Cost Analysis Results[/bold green]")
+            console.print(f"Provider: [cyan]{provider.upper()}[/cyan]")
+            console.print(f"Region: [cyan]{region}[/cyan]")
+            console.print(f"Duration: [cyan]{hours} hours[/cyan]")
+            
+            if 'resources' in cost_data:
+                console.print(f"\nTotal Resources: [yellow]{len(cost_data['resources'])}[/yellow]")
+                total_cost = sum(r.get('cost', 0) for r in cost_data['resources'])
+                console.print(f"Estimated Total Cost: [green]${total_cost:.2f}[/green]")
+            
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
 
 # Add the enhanced scanning commands
 @app.command("secrets")

@@ -190,18 +190,238 @@ class TerraformPlanParser:
         else:
             return 'unknown'
 
+class CloudFormationYAMLParser:
+    """Enhanced CloudFormation YAML parser that handles CloudFormation-specific tags."""
+    
+    def __init__(self):
+        self.cf_constructors = {
+            '!Ref': self._construct_ref,
+            '!GetAtt': self._construct_getatt,
+            '!Sub': self._construct_sub,
+            '!Join': self._construct_join,
+            '!Select': self._construct_select,
+            '!Split': self._construct_split,
+            '!Base64': self._construct_base64,
+            '!Cidr': self._construct_cidr,
+            '!FindInMap': self._construct_findinmap,
+            '!GetAZs': self._construct_getazs,
+            '!ImportValue': self._construct_importvalue,
+            '!Equals': self._construct_equals,
+            '!Not': self._construct_not,
+            '!And': self._construct_and,
+            '!Or': self._construct_or,
+            '!If': self._construct_if,
+            '!Condition': self._construct_condition
+        }
+    
+    def _construct_ref(self, loader, node):
+        """Handle !Ref tag."""
+        value = loader.construct_scalar(node)
+        return {'Ref': value}
+    
+    def _construct_getatt(self, loader, node):
+        """Handle !GetAtt tag."""
+        if isinstance(node.value, str):
+            # Single string format: LogicalName.AttributeName
+            return {'Fn::GetAtt': node.value.split('.', 1)}
+        else:
+            # List format: [LogicalName, AttributeName]
+            value = loader.construct_sequence(node)
+            return {'Fn::GetAtt': value}
+    
+    def _construct_sub(self, loader, node):
+        """Handle !Sub tag."""
+        if isinstance(node, yaml.ScalarNode):
+            value = loader.construct_scalar(node)
+            return {'Fn::Sub': value}
+        else:
+            value = loader.construct_sequence(node)
+            return {'Fn::Sub': value}
+    
+    def _construct_join(self, loader, node):
+        """Handle !Join tag."""
+        value = loader.construct_sequence(node)
+        return {'Fn::Join': value}
+    
+    def _construct_select(self, loader, node):
+        """Handle !Select tag."""
+        value = loader.construct_sequence(node)
+        return {'Fn::Select': value}
+    
+    def _construct_split(self, loader, node):
+        """Handle !Split tag."""
+        value = loader.construct_sequence(node)
+        return {'Fn::Split': value}
+    
+    def _construct_base64(self, loader, node):
+        """Handle !Base64 tag."""
+        value = loader.construct_scalar(node)
+        return {'Fn::Base64': value}
+    
+    def _construct_cidr(self, loader, node):
+        """Handle !Cidr tag."""
+        value = loader.construct_sequence(node)
+        return {'Fn::Cidr': value}
+    
+    def _construct_findinmap(self, loader, node):
+        """Handle !FindInMap tag."""
+        value = loader.construct_sequence(node)
+        return {'Fn::FindInMap': value}
+    
+    def _construct_getazs(self, loader, node):
+        """Handle !GetAZs tag."""
+        value = loader.construct_scalar(node)
+        return {'Fn::GetAZs': value}
+    
+    def _construct_importvalue(self, loader, node):
+        """Handle !ImportValue tag."""
+        value = loader.construct_scalar(node)
+        return {'Fn::ImportValue': value}
+    
+    def _construct_equals(self, loader, node):
+        """Handle !Equals tag."""
+        value = loader.construct_sequence(node)
+        return {'Fn::Equals': value}
+    
+    def _construct_not(self, loader, node):
+        """Handle !Not tag."""
+        value = loader.construct_sequence(node)
+        return {'Fn::Not': value}
+    
+    def _construct_and(self, loader, node):
+        """Handle !And tag."""
+        value = loader.construct_sequence(node)
+        return {'Fn::And': value}
+    
+    def _construct_or(self, loader, node):
+        """Handle !Or tag."""
+        value = loader.construct_sequence(node)
+        return {'Fn::Or': value}
+    
+    def _construct_if(self, loader, node):
+        """Handle !If tag."""
+        value = loader.construct_sequence(node)
+        return {'Fn::If': value}
+    
+    def _construct_condition(self, loader, node):
+        """Handle !Condition tag."""
+        value = loader.construct_scalar(node)
+        return {'Condition': value}
+    
+    def create_cf_loader(self):
+        """Create a YAML loader with CloudFormation constructors."""
+        class CFLoader(yaml.SafeLoader):
+            pass
+        
+        # Add constructors for CloudFormation tags
+        for tag, constructor in self.cf_constructors.items():
+            CFLoader.add_constructor(tag, constructor)
+        
+        return CFLoader
+    
+    def parse_cloudformation_yaml(self, file_path: str) -> Dict[str, Any]:
+        """Parse CloudFormation YAML with proper tag handling."""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                cf_loader = self.create_cf_loader()
+                data = yaml.load(file, Loader=cf_loader)
+                return self._parse_cloudformation_data(data)
+        except Exception as e:
+            return {"error": f"Error parsing CloudFormation YAML: {e}"}
+    
+    def _parse_cloudformation_data(self, cf_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse CloudFormation data structure."""
+        result = {
+            "resources": [],
+            "file_type": "cloudformation",
+            "parameters": cf_data.get('Parameters', {}),
+            "outputs": cf_data.get('Outputs', {}),
+            "conditions": cf_data.get('Conditions', {}),
+            "mappings": cf_data.get('Mappings', {})
+        }
+        
+        resources = cf_data.get('Resources', {})
+        for resource_name, resource_config in resources.items():
+            resource_type = resource_config.get('Type', 'unknown')
+            properties = resource_config.get('Properties', {})
+            
+            # Process CloudFormation intrinsic functions
+            processed_properties = self._process_intrinsic_functions(properties)
+            
+            result["resources"].append({
+                "type": resource_type,
+                "name": resource_name,
+                "config": processed_properties,
+                "provider": "aws",  # CloudFormation is AWS-specific
+                "condition": resource_config.get('Condition'),
+                "depends_on": resource_config.get('DependsOn', []),
+                "metadata": resource_config.get('Metadata', {})
+            })
+        
+        return result
+    
+    def _process_intrinsic_functions(self, obj: Any) -> Any:
+        """Process CloudFormation intrinsic functions recursively."""
+        if isinstance(obj, dict):
+            if len(obj) == 1:
+                key, value = next(iter(obj.items()))
+                if key in ['Ref', 'Fn::GetAtt', 'Fn::Sub', 'Fn::Join', 'Fn::Select', 
+                          'Fn::Split', 'Fn::Base64', 'Fn::Cidr', 'Fn::FindInMap',
+                          'Fn::GetAZs', 'Fn::ImportValue', 'Fn::Equals', 'Fn::Not',
+                          'Fn::And', 'Fn::Or', 'Fn::If', 'Condition']:
+                    # Keep intrinsic function as-is but process its value
+                    return {key: self._process_intrinsic_functions(value)}
+            
+            # Process all dict values
+            return {k: self._process_intrinsic_functions(v) for k, v in obj.items()}
+        
+        elif isinstance(obj, list):
+            return [self._process_intrinsic_functions(item) for item in obj]
+        
+        else:
+            return obj
+
 class YAMLParser:
     """Parser for YAML infrastructure files."""
+    
+    def __init__(self):
+        self.cf_parser = CloudFormationYAMLParser()
     
     def parse_file(self, file_path: str) -> Dict[str, Any]:
         """Parse a YAML infrastructure file."""
         try:
+            # First, try to detect if it's a CloudFormation template
+            if self._is_cloudformation_template(file_path):
+                return self.cf_parser.parse_cloudformation_yaml(file_path)
+            
+            # Otherwise, use standard YAML parsing
             with open(file_path, 'r', encoding='utf-8') as file:
                 yaml_data = yaml.safe_load(file)
             
             return self.parse_yaml_data(yaml_data)
         except Exception as e:
             return {"error": f"Error parsing YAML file: {e}"}
+    
+    def _is_cloudformation_template(self, file_path: str) -> bool:
+        """Detect if YAML file is a CloudFormation template."""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                content = file.read()
+            
+            # Check for CloudFormation indicators
+            cf_indicators = [
+                'AWSTemplateFormatVersion',
+                'Resources:',
+                'Parameters:',
+                'Outputs:',
+                '!Ref',
+                '!GetAtt',
+                '!Sub'
+            ]
+            
+            return any(indicator in content for indicator in cf_indicators)
+        except Exception:
+            return False
     
     def parse_yaml_data(self, yaml_data: Dict[str, Any]) -> Dict[str, Any]:
         """Parse YAML data for infrastructure resources."""

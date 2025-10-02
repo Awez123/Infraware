@@ -5,3 +5,7 @@ boto3
 google-cloud-billing
 azure-mgmt-costmanagement
 pandas
+# CVE Database and Container Security
+aiohttp
+requests
+docker

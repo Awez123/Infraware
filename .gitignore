@@ -1,22 +1,59 @@
-.terraform
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 1263b41 (ign)
-venv
-# Ignore the virtual environment directory
-__pycache__
-# Ignore Python cache files
-<<<<<<< HEAD
-infraware/__pycache__/*
-=======
-<<<<<<< HEAD
-infraware/__pycache__/*
->>>>>>> bec212d956b62e881cd0af1c94cdbf120e4530bf
-=======
-venv
->>>>>>> 99f36f3 (ignore venv)
-=======
-infraware/__pycache__/*
->>>>>>> 1263b41 (ign)
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfplan
+terraform.tfvars
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# InfraWare specific
+*.db
+*.sqlite
+*.sqlite3
+test_*.py
+test_dockerfile
+logs/
+tmp/
+
+# Build artifacts
+build/
+dist/
 >>>>>>> Ikram-hyderi
