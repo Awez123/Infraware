@@ -1,146 +1,332 @@
-# InfraWare - Infrastructure Security and Cost Analysis Tool# <img src="assets/InfraWare.png" alt="InfraWare Logo" width="full"> InfraWare 🛡️ - Your IaC Security and Quality Scanner
+# 🛡️ InfraWare - Enterprise Infrastructure Security & Cost Platform# 🛡️ InfraWare - Enterprise Infrastructure Security & Cost Platform
 
 
 
-InfraWare is a command-line tool for analyzing Infrastructure as Code (IaC) files. It provides security vulnerability scanning and comprehensive cost analysis for AWS, GCP, and Azure resources.InfraWare is a powerful, rule-based command-line tool designed to scan Infrastructure as Code (IaC) for security vulnerabilities, misconfigurations, and code quality issues. It analyzes Terraform plan files to provide the most accurate assessment of your planned infrastructure changes.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
 
 
-## What InfraWare Does![InfraWare Demo](https-placeholder-for-your-demo-gif.gif)
+**InfraWare** is an enterprise-grade Infrastructure as Code (IaC) security scanner with integrated CVE database and container security capabilities. It combines infrastructure vulnerability detection with cost analysis to provide comprehensive cloud security insights.**InfraWare** is an enterprise-grade Infrastructure as Code (IaC) security scanner with integrated CVE database and container security capabilities. It combines infrastructure vulnerability detection with cost analysis to provide comprehensive cloud security insights.
 
-*(Tip: You can use a tool like [ScreenToGif](https://www.screentogif.com/) or [Peek](https://github.com/phw/peek) to create a simple GIF of your tool in action and replace the placeholder above.)*
 
-- **Security Scanning**: Detect vulnerabilities and misconfigurations in Terraform files
 
-- **Cost Analysis**: Calculate monthly costs for cloud resources with region-aware pricing## ✨ Key Features
+## 🚀 Key Features## 🚀 Key Features
+
+
+
+### 🔍 Infrastructure Security### 🔍 Infrastructure Security
+
+- **Multi-Cloud IaC Scanning**: Terraform, CloudFormation, Kubernetes YAML- **Multi-Cloud IaC Scanning**: Terraform, CloudFormation, Kubernetes YAML
+
+- **CVE Integration**: 2,000+ vulnerabilities with real-time updates- **CVE Integration**: 2,000+ vulnerabilities with real-time updates
+
+- **Risk Scoring**: Advanced severity assessment and scoring- **Risk Scoring**: Advanced severity assessment and scoring
+
+- **Compliance Mapping**: CIS Controls and industry standards- **Compliance Mapping**: CIS Controls and industry standards
+
+
+
+### 🐳 Container Security### 🐳 Container Security
+
+- **Dockerfile Analysis**: Security best practices and vulnerability detection- **Dockerfile Analysis**: Security best practices and vulnerability detection
+
+- **Container Image Scanning**: Layer-by-layer vulnerability analysis- **Container Image Scanning**: Layer-by-layer vulnerability analysis
+
+- **Runtime Security**: Running container assessment- **Runtime Security**: Running container assessment
+
+- **Secret Detection**: Hardcoded credentials and sensitive data identification- **Secret Detection**: Hardcoded credentials and sensitive data identification
+
+
+
+### 💰 Cost Analysis### 💰 Cost Analysis
+
+- **Multi-Cloud Cost Estimation**: AWS, Azure, GCP pricing- **Multi-Cloud Cost Estimation**: AWS, Azure, GCP pricing
+
+- **Resource Optimization**: Cost-aware security recommendations- **Resource Optimization**: Cost-aware security recommendations
+
+- **Regional Pricing**: Location-specific cost calculations- **Regional Pricing**: Location-specific cost calculations
+
+- **Usage-Based Modeling**: Flexible time-based cost projections- **Usage-Based Modeling**: Flexible time-based cost projections
+
+
+
+### 🔄 Real-Time Intelligence### 🔄 Real-Time Intelligence
+
+- **CVE Database**: Auto-updating vulnerability intelligence from NVD and GitHub- **CVE Database**: Auto-updating vulnerability intelligence from NVD and GitHub
+
+- **Threat Correlation**: Infrastructure resources mapped to known vulnerabilities- **Threat Correlation**: Infrastructure resources mapped to known vulnerabilities
+
+- **Security Scoring**: Dynamic risk assessment based on current threat landscape- **Security Scoring**: Dynamic risk assessment based on current threat landscape
+
+
+
+## 📦 Installation*(Tip: You can use a tool like [ScreenToGif](https://www.screentogif.com/) or [Peek](https://github.com/phw/peek) to create a simple GIF of your tool in action and replace the placeholder above.)*
+
+
+
+```bash- **Security Scanning**: Detect vulnerabilities and misconfigurations in Terraform files
+
+# Clone the repository
+
+git clone https://github.com/ikramhyderi/Infraware.git- **Cost Analysis**: Calculate monthly costs for cloud resources with region-aware pricing## ✨ Key Features
+
+cd Infraware
 
 - **Multiple Format Support**: Works with Terraform (.tf), JSON, and YAML files
 
-- **Rule-Based Engine**: Extensible rules system with confidence scoring* **Accurate Plan Scanning**: Analyzes the JSON output of `terraform plan` to understand the exact state of your infrastructure, including modules and variables.
+# Install dependencies
 
-- **Professional CLI**: Clean command-line interface with detailed help* **Extensible Rule Engine**: Define security and quality checks in simple, human-readable YAML files.
+pip install -r requirements.txt- **Rule-Based Engine**: Extensible rules system with confidence scoring* **Accurate Plan Scanning**: Analyzes the JSON output of `terraform plan` to understand the exact state of your infrastructure, including modules and variables.
 
-* **Professional CLI**: A full-featured command-line interface with commands for scanning and rule management.
 
-## Requirements* **Interactive Rule Creation**: Use `infraware rules create` to be guided through making new rules.
 
-* **Rule Validation**: Use `infraware rules validate` to check your custom rule files for correct syntax.
+# Install InfraWare- **Professional CLI**: Clean command-line interface with detailed help* **Extensible Rule Engine**: Define security and quality checks in simple, human-readable YAML files.
 
-- Python 3.8 or higher* **Ignore Findings**: Baseline your infrastructure by ignoring specific findings using simple ignore files.
+pip install -e .
+
+```* **Professional CLI**: A full-featured command-line interface with commands for scanning and rule management.
+
+
+
+## 🎯 Quick Start## Requirements* **Interactive Rule Creation**: Use `infraware rules create` to be guided through making new rules.
+
+
+
+### Infrastructure Scanning* **Rule Validation**: Use `infraware rules validate` to check your custom rule files for correct syntax.
+
+```bash
+
+# Scan Terraform plan- Python 3.8 or higher* **Ignore Findings**: Baseline your infrastructure by ignoring specific findings using simple ignore files.
+
+infraware scan terraform-plan.json
 
 - Terraform (for Terraform file analysis)* **Formatted Output**: Clean, color-coded console output makes it easy to spot issues.
 
+# Scan with JSON output
 
+infraware scan infrastructure.tf --format json
+
+```
 
 ## Installation## 📋 Prerequisites
 
+### Cost Analysis
+
+```bash
+
+# Analyze costs for AWS us-east-1
+
+infraware cost-analysis terraform-plan.tf --region us-east-1 --hours 7201. Clone the repository:* [Python](https://www.python.org/downloads/) (version 3.8 or higher)
 
 
-1. Clone the repository:* [Python](https://www.python.org/downloads/) (version 3.8 or higher)
 
-```bash* [Terraform](https://developer.hashicorp.com/terraform/downloads) (version 1.0 or higher)
+# Multi-cloud cost analysis```bash* [Terraform](https://developer.hashicorp.com/terraform/downloads) (version 1.0 or higher)
 
-git clone https://github.com/your-username/infraware.git
+infraware cost-analysis multi-cloud.json --provider aws --region us-west-2
 
-cd infraware## 🚀 Installation
+```git clone https://github.com/your-username/infraware.git
 
-```
+
+
+### CVE Database Operationscd infraware## 🚀 Installation
+
+```bash
+
+# Update CVE database```
+
+infraware cve-update
 
 To install and use the InfraWare CLI, follow these steps:
 
-2. Install the package:
+# Search for specific vulnerabilities
 
-```bash1.  **Clone the Repository**:
+infraware cve-search "apache" --severity HIGH --limit 52. Install the package:
 
-pip install -e .    ```bash
 
-```    git clone [https://github.com/your-username/infraware.git](https://github.com/your-username/infraware.git)
 
-    cd infraware
+# View database statistics```bash1.  **Clone the Repository**:
+
+infraware cve-stats
+
+```pip install -e .    ```bash
+
+
+
+### Container Security```    git clone [https://github.com/your-username/infraware.git](https://github.com/your-username/infraware.git)
+
+```bash
+
+# Scan Dockerfile for security issues    cd infraware
+
+infraware dockerfile-scan Dockerfile
 
 3. Verify installation:    ```
 
+# Comprehensive container scan
+
+infraware container-scan nginx:latest```bash
+
+
+
+# Runtime container analysisinfraware --help2.  **Install the Package**:
+
+infraware container-runtime container-id
+
+``````    This command uses the `pyproject.toml` file to install the `infraware` command and its dependencies.
+
+
+
+### Secret Detection    ```bash
+
 ```bash
 
-infraware --help2.  **Install the Package**:
+# Scan directory for secrets## Quick Start    pip install .
 
-```    This command uses the `pyproject.toml` file to install the `infraware` command and its dependencies.
-
-    ```bash
-
-## Quick Start    pip install .
+infraware secrets /path/to/code
 
     ```
 
-### Security Scanning
+# Comprehensive security scan
+
+infraware comprehensive terraform-plan.json### Security Scanning
+
+```
 
 3.  **Verify Installation**:
 
+## 📊 Command Reference
+
 1. Generate a Terraform plan:    Check that the command is available in your path.
 
-```bash    ```bash
+| Command | Purpose | Example |
 
-terraform plan -out=tfplan.binary    infraware --help
+|---------|---------|---------|```bash    ```bash
 
-terraform show -json tfplan.binary > tfplan.json    ```
+| `scan` | Infrastructure vulnerability scanning | `infraware scan plan.json` |
 
-```
+| `cost-analysis` | Cloud cost estimation | `infraware cost-analysis plan.tf --hours 720` |terraform plan -out=tfplan.binary    infraware --help
 
-## 🔬 Usage Guide
+| `cve-update` | Update CVE database | `infraware cve-update` |
 
-2. Run security scan:
+| `cve-search` | Search CVE database | `infraware cve-search "kubernetes" --severity CRITICAL` |terraform show -json tfplan.binary > tfplan.json    ```
 
-```bashInfraWare is designed to fit into your standard Terraform workflow.
+| `cve-stats` | CVE database statistics | `infraware cve-stats` |
 
-infraware scan tfplan.json
+| `container-scan` | Container image scanning | `infraware container-scan alpine:latest` |```
 
-```### Scanning a Terraform Project
+| `dockerfile-scan` | Dockerfile security analysis | `infraware dockerfile-scan Dockerfile` |
+
+| `container-runtime` | Running container analysis | `infraware container-runtime web-app` |## 🔬 Usage Guide
+
+| `secrets` | Secret detection | `infraware secrets ./src --format json` |
+
+| `comprehensive` | Multi-faceted security scan | `infraware comprehensive infrastructure/` |2. Run security scan:
 
 
 
-### Cost Analysis1.  **Navigate to Your Terraform Project**:
+## 📈 Comparison with Trivy```bashInfraWare is designed to fit into your standard Terraform workflow.
+
+
+
+| Feature | InfraWare | Trivy | Advantage |infraware scan tfplan.json
+
+|---------|-----------|-------|-----------|
+
+| **CVE Database** | 2,000+ (growing) | 180,000+ | Trivy (larger) |```### Scanning a Terraform Project
+
+| **IaC Scanning** | Advanced Terraform/CF | Basic IaC support | InfraWare |
+
+| **Cost Analysis** | ✅ Multi-cloud | ❌ Not available | InfraWare |
+
+| **Container Security** | ✅ Full platform | ✅ Excellent | Tie |
+
+| **Real-time Updates** | ✅ Auto-updating | ✅ Regular updates | Tie |### Cost Analysis1.  **Navigate to Your Terraform Project**:
+
+| **Enterprise Features** | ✅ Cost + Security | ✅ SBOM, attestation | Tie |
 
     `cd` into the directory containing your `.tf` files.
 
+## 🏗️ Architecture
+
 1. Analyze infrastructure costs:
+
+InfraWare uses a hybrid approach for maximum effectiveness:
 
 ```bash2.  **Initialize Terraform**:
 
-infraware cost-analysis file main.tf --region us-west-2    If you haven't already, initialize Terraform to download providers and modules.
+### External Database Commands (Real-time)
+
+- `cve-update`, `cve-search`, `cve-stats` - NVD, GitHub Security Advisoriesinfraware cost-analysis file main.tf --region us-west-2    If you haven't already, initialize Terraform to download providers and modules.
+
+- `container-scan`, `container-runtime` - Docker APIs, package managers
 
 ```    ```bash
 
-    terraform init
+### Local Database Commands (Fast & Offline)
 
-2. Estimate specific resources:    ```
+- `scan` - Local security rules (rules/*.yaml)    terraform init
 
-```bash
+- `cost-analysis` - Local pricing data (config/pricing/*.yaml)
 
-infraware cost-analysis estimate aws aws_instance --type t3.medium3.  **Generate the JSON Plan**:
+- `dockerfile-scan`, `secrets` - Hardcoded patterns for speed2. Estimate specific resources:    ```
 
-```    Create a binary plan file and convert it to a readable JSON format.
 
-    ```bash
 
-3. Check supported providers and regions:    terraform plan -out=tfplan.binary
+## 🤝 Contributing```bash
 
-```bash    terraform show -json tfplan.binary > tfplan.json
 
-infraware cost-analysis providers    ```
 
-```
+1. Fork the repositoryinfraware cost-analysis estimate aws aws_instance --type t3.medium3.  **Generate the JSON Plan**:
+
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+
+3. Commit your changes (`git commit -m 'Add amazing feature'`)```    Create a binary plan file and convert it to a readable JSON format.
+
+4. Push to the branch (`git push origin feature/amazing-feature`)
+
+5. Open a Pull Request    ```bash
+
+
+
+## 📄 License3. Check supported providers and regions:    terraform plan -out=tfplan.binary
+
+
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.```bash    terraform show -json tfplan.binary > tfplan.json
+
+
+
+## 👥 Authorsinfraware cost-analysis providers    ```
+
+
+
+- **Awez Ahmed Khan** - *Initial work* - awezkhan786jb@gmail.com```
+
+- **Ikram Hyderi** - *Enhanced development* - mdikramhyderi@gmail.com
 
 4.  **Run the Scanner**:
 
+## 🙏 Acknowledgments
+
 ## Available Commands    Now, use the `infraware` command to run the scan.
 
-    ```bash
+- **NIST NVD** for vulnerability data
 
-### Security Commands    infraware scan ./tfplan.json --rules-dir /path/to/your/rules --ignore-dir /path/to/your/ignores
+- **GitHub Security Advisories** for threat intelligence    ```bash
 
-- `infraware scan` - Scan files for security vulnerabilities    ```
+- **Cloud providers** for pricing transparency
 
-- `infraware rules list` - List available security rules    **Example**:
+- **Open source community** for continuous improvement### Security Commands    infraware scan ./tfplan.json --rules-dir /path/to/your/rules --ignore-dir /path/to/your/ignores
+
+
+
+---- `infraware scan` - Scan files for security vulnerabilities    ```
+
+
+
+*InfraWare: Where Infrastructure Security Meets Cost Intelligence* 🚀- `infraware rules list` - List available security rules    **Example**:
 
 - `infraware rules validate` - Validate rule files    ```bash
 
