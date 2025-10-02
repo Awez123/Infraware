@@ -1,0 +1,130 @@
+# GCP Pricing Configuration
+# Prices are in USD and represent typical pricing as of 2025
+# Users can modify these values based on their specific requirements
+
+metadata:
+  provider: "gcp"
+  last_updated: "2025-10-02"
+  source: "Google Cloud Official Pricing"
+  currency: "USD"
+  confidence_scale: "1-10 (10 being most accurate)"
+  reference_url: "https://cloud.google.com/pricing/"
+  notes: "Pricing based on on-demand usage without sustained use discounts"
+
+regions:
+  us-central1:
+    name: "US Central (Iowa)"
+    multiplier: 1.0
+  us-east1:
+    name: "US East (South Carolina)"
+    multiplier: 1.0
+  europe-west1:
+    name: "Europe West (Belgium)"
+    multiplier: 1.1
+  asia-southeast1:
+    name: "Asia Southeast (Singapore)"
+    multiplier: 1.2
+  asia-northeast1:
+    name: "Asia Northeast (Tokyo)"
+    multiplier: 1.15
+
+compute:
+  google_compute_instance:
+    metadata:
+      category: "Compute Engine"
+      billing_model: "per-second with 1-minute minimum"
+      reference: "https://cloud.google.com/compute/pricing"
+      notes: "E2 instances provide balanced price/performance"
+    e2-micro:
+      price_per_hour: 0.008467
+      vcpu: 0.25
+      memory_gb: 1
+      confidence: 10
+      impact_level: "low"
+      last_verified: "2025-10-02"
+      tags: ["shared-core", "burstable", "cost-effective"]
+    e2-small:
+      price_per_hour: 0.016934
+      vcpu: 0.5
+      memory_gb: 2
+      confidence: 10
+      impact_level: "low"
+      last_verified: "2025-10-02"
+      tags: ["shared-core", "burstable"]
+    e2-medium:
+      price_per_hour: 0.033869
+      vcpu: 1
+      memory_gb: 4
+      confidence: 10
+      impact_level: "medium"
+      last_verified: "2025-10-02"
+      tags: ["standard", "balanced"]
+    n1-standard-1:
+      price_per_hour: 0.0475
+      vcpu: 1
+      memory_gb: 3.75
+      confidence: 10
+      impact_level: "medium"
+      last_verified: "2025-10-02"
+      tags: ["previous-generation", "standard"]
+    n1-standard-2:
+      price_per_hour: 0.095
+      vcpu: 2
+      memory_gb: 7.5
+      confidence: 10
+      impact_level: "medium"
+      last_verified: "2025-10-02"
+      tags: ["previous-generation", "standard"]
+
+storage:
+  google_compute_disk:
+    pd-standard:
+      price_per_gb_month: 0.04
+    pd-balanced:
+      price_per_gb_month: 0.10
+    pd-ssd:
+      price_per_gb_month: 0.17
+  google_storage_bucket:
+    standard:
+      price_per_gb_month: 0.020
+      operations_class_a_per_10k: 0.05
+      operations_class_b_per_10k: 0.004
+    nearline:
+      price_per_gb_month: 0.010
+      operations_class_a_per_10k: 0.10
+      operations_class_b_per_10k: 0.01
+
+database:
+  google_sql_database_instance:
+    db-f1-micro:
+      price_per_hour: 0.0150
+    db-g1-small:
+      price_per_hour: 0.0500
+    db-n1-standard-1:
+      price_per_hour: 0.0965
+
+networking:
+  google_compute_network:
+    price_per_month: 0.0  # VPC networks are free
+  google_compute_router:
+    price_per_hour: 0.05
+  google_compute_global_forwarding_rule:
+    price_per_hour: 0.025
+
+containers:
+  google_container_cluster:
+    autopilot:
+      price_per_vcpu_hour: 0.04446
+      price_per_gb_hour: 0.004865
+    standard:
+      price_per_hour: 0.10  # Management fee
+
+serverless:
+  google_cloudfunctions_function:
+    price_per_invocation_million: 0.40
+    price_per_gb_second: 0.0000025
+
+bigquery:
+  google_bigquery_dataset:
+    price_per_tb_stored_month: 20.0
+    price_per_tb_queried: 5.0
