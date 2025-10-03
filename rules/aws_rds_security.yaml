@@ -1,0 +1,75 @@
+# AWS RDS Database Security Rules
+- id: AWS-RDS-001
+  title: "RDS Instance Not Encrypted"
+  description: "RDS database instance is not encrypted at rest"
+  severity: HIGH
+  category: "Database Security"
+  resource_types:
+    - aws_db_instance
+  conditions:
+    - path: "storage_encrypted"
+      operator: "equals"
+      value: false
+  remediation: "Enable storage encryption for RDS instances"
+  references:
+    - "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.Encryption.html"
+
+- id: AWS-RDS-002
+  title: "RDS Instance Publicly Accessible"
+  description: "RDS database instance is publicly accessible from the internet"
+  severity: CRITICAL
+  category: "Database Security"
+  resource_types:
+    - aws_db_instance
+  conditions:
+    - path: "publicly_accessible"
+      operator: "equals"
+      value: true
+  remediation: "Set publicly_accessible to false for RDS instances"
+  references:
+    - "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_VPC.WorkingWithRDSInstanceinaVPC.html"
+
+- id: AWS-RDS-003
+  title: "RDS Instance Backup Retention Too Short"
+  description: "RDS backup retention period is less than 7 days"
+  severity: MEDIUM
+  category: "Database Security"
+  resource_types:
+    - aws_db_instance
+  conditions:
+    - path: "backup_retention_period"
+      operator: "less_than"
+      value: 7
+  remediation: "Set backup retention period to at least 7 days"
+  references:
+    - "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithAutomatedBackups.html"
+
+- id: AWS-RDS-004
+  title: "RDS Instance Without Multi-AZ"
+  description: "RDS instance does not have Multi-AZ deployment enabled for high availability"
+  severity: MEDIUM
+  category: "Database Security"
+  resource_types:
+    - aws_db_instance
+  conditions:
+    - path: "multi_az"
+      operator: "equals"
+      value: false
+  remediation: "Enable Multi-AZ deployment for production RDS instances"
+  references:
+    - "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZ.html"
+
+- id: AWS-RDS-005
+  title: "RDS Instance Using Default Port"
+  description: "RDS instance is using default database port which increases attack surface"
+  severity: LOW
+  category: "Database Security"
+  resource_types:
+    - aws_db_instance
+  conditions:
+    - path: "port"
+      operator: "in"
+      value: [3306, 5432, 1433, 1521, 27017]
+  remediation: "Use non-default ports for database instances"
+  references:
+    - "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithParamGroups.html"

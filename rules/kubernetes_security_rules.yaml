@@ -1,0 +1,90 @@
+- id: K8S-SEC-001
+  title: "Container Running as Root User"
+  description: "Container is configured to run as root user (UID 0), which poses security risks"
+  severity: HIGH
+  category: "Container Security"
+  resource_types:
+    - kubernetes_deployment
+  conditions:
+    - path: "template.spec.containers[*].securityContext.runAsUser"
+      operator: "equals"
+      value: 0
+  remediation: "Set runAsUser to a non-root UID (e.g., 1000) in securityContext"
+  references:
+    - "https://kubernetes.io/docs/concepts/security/pod-security-standards/"
+
+- id: K8S-SEC-002
+  title: "Privileged Container"
+  description: "Container is running in privileged mode, granting access to host resources"
+  severity: CRITICAL
+  category: "Container Security"
+  resource_types:
+    - kubernetes_deployment
+  conditions:
+    - path: "template.spec.containers[*].securityContext.privileged"
+      operator: "equals"
+      value: true
+  remediation: "Remove privileged: true or set to false unless absolutely necessary"
+  references:
+    - "https://kubernetes.io/docs/concepts/security/pod-security-standards/"
+
+- id: K8S-SEC-003
+  title: "Hardcoded Secrets in Environment Variables"
+  description: "Sensitive data appears to be hardcoded in environment variables"
+  severity: HIGH
+  category: "Secrets Management"
+  resource_types:
+    - kubernetes_deployment
+  conditions:
+    - path: "template.spec.containers[*].env[*].name"
+      operator: "matches"
+      value: "(?i)(secret|password|token|key|api)"
+    - path: "template.spec.containers[*].env[*].value"
+      operator: "not_empty"
+  remediation: "Use Kubernetes Secrets or ConfigMaps instead of hardcoded values"
+  references:
+    - "https://kubernetes.io/docs/concepts/configuration/secret/"
+
+- id: K8S-SEC-004
+  title: "Vulnerable Container Image Version"
+  description: "Container image may contain known vulnerabilities"
+  severity: HIGH
+  category: "Image Security"
+  resource_types:
+    - kubernetes_deployment
+  conditions:
+    - path: "template.spec.containers[*].image"
+      operator: "matches"
+      value: "nginx:(1\\.14\\.|1\\.13\\.|1\\.12\\.)"
+  remediation: "Update to latest stable nginx version (1.20+ recommended)"
+  references:
+    - "https://hub.docker.com/_/nginx"
+
+- id: K8S-SEC-005
+  title: "Missing Resource Limits"
+  description: "Container does not have CPU/memory limits defined"
+  severity: MEDIUM
+  category: "Resource Management"
+  resource_types:
+    - kubernetes_deployment
+  conditions:
+    - path: "template.spec.containers[*].resources.limits"
+      operator: "not_exists"
+  remediation: "Define resource limits to prevent resource exhaustion"
+  references:
+    - "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/"
+
+- id: K8S-SEC-006
+  title: "LoadBalancer Service Without Restrictions"
+  description: "Service exposes application to internet without proper access controls"
+  severity: MEDIUM
+  category: "Network Security"
+  resource_types:
+    - kubernetes_service
+  conditions:
+    - path: "type"
+      operator: "equals"
+      value: "LoadBalancer"
+  remediation: "Consider using ClusterIP or NodePort, or implement proper ingress controls"
+  references:
+    - "https://kubernetes.io/docs/concepts/services-networking/service/"

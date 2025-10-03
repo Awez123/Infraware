@@ -1,0 +1,58 @@
+# AWS KMS and Encryption Security Rules
+- id: AWS-KMS-001
+  title: "KMS Key Without Rotation"
+  description: "KMS key does not have automatic key rotation enabled"
+  severity: MEDIUM
+  category: "Encryption"
+  resource_types:
+    - aws_kms_key
+  conditions:
+    - path: "enable_key_rotation"
+      operator: "equals"
+      value: false
+  remediation: "Enable automatic key rotation for KMS keys"
+  references:
+    - "https://docs.aws.amazon.com/kms/latest/developerguide/rotating-keys.html"
+
+- id: AWS-KMS-002
+  title: "KMS Key With Overly Permissive Policy"
+  description: "KMS key policy allows access from any AWS account"
+  severity: CRITICAL
+  category: "Access Management"
+  resource_types:
+    - aws_kms_key
+  conditions:
+    - path: "policy"
+      operator: "contains"
+      value: '"Principal": "*"'
+  remediation: "Restrict KMS key access to specific principals"
+  references:
+    - "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html"
+
+- id: AWS-SECRETS-001
+  title: "Secrets Manager Secret Without Rotation"
+  description: "Secrets Manager secret does not have automatic rotation configured"
+  severity: MEDIUM
+  category: "Secret Management"
+  resource_types:
+    - aws_secretsmanager_secret
+  conditions:
+    - path: "rotation_lambda_arn"
+      operator: "not_exists"
+  remediation: "Configure automatic rotation for secrets"
+  references:
+    - "https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotating-secrets.html"
+
+- id: AWS-SECRETS-002
+  title: "Secrets Manager Secret Without KMS Encryption"
+  description: "Secrets Manager secret is not encrypted with customer managed KMS key"
+  severity: MEDIUM
+  category: "Encryption"
+  resource_types:
+    - aws_secretsmanager_secret
+  conditions:
+    - path: "kms_key_id"
+      operator: "not_exists"
+  remediation: "Use customer managed KMS keys for secret encryption"
+  references:
+    - "https://docs.aws.amazon.com/secretsmanager/latest/userguide/security-encryption.html"

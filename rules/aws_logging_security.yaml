@@ -1,0 +1,72 @@
+# AWS CloudTrail and Logging Security Rules
+- id: AWS-CLOUDTRAIL-001
+  title: "CloudTrail Not Enabled"
+  description: "CloudTrail is not enabled for API logging and monitoring"
+  severity: HIGH
+  category: "Logging"
+  resource_types:
+    - aws_cloudtrail
+  conditions:
+    - path: "enable_logging"
+      operator: "equals"
+      value: false
+  remediation: "Enable CloudTrail logging for all regions"
+  references:
+    - "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-getting-started.html"
+
+- id: AWS-CLOUDTRAIL-002
+  title: "CloudTrail Logs Not Encrypted"
+  description: "CloudTrail logs are not encrypted with KMS"
+  severity: MEDIUM
+  category: "Encryption"
+  resource_types:
+    - aws_cloudtrail
+  conditions:
+    - path: "kms_key_id"
+      operator: "not_exists"
+  remediation: "Enable KMS encryption for CloudTrail logs"
+  references:
+    - "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/encrypting-cloudtrail-log-files-with-aws-kms.html"
+
+- id: AWS-CLOUDTRAIL-003
+  title: "CloudTrail Without Log File Validation"
+  description: "CloudTrail does not have log file validation enabled"
+  severity: MEDIUM
+  category: "Integrity"
+  resource_types:
+    - aws_cloudtrail
+  conditions:
+    - path: "enable_log_file_validation"
+      operator: "equals"
+      value: false
+  remediation: "Enable log file validation for CloudTrail"
+  references:
+    - "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-log-file-validation-intro.html"
+
+- id: AWS-CLOUDWATCH-001
+  title: "CloudWatch Log Group Without Retention"
+  description: "CloudWatch log group does not have retention period set"
+  severity: LOW
+  category: "Log Management"
+  resource_types:
+    - aws_cloudwatch_log_group
+  conditions:
+    - path: "retention_in_days"
+      operator: "not_exists"
+  remediation: "Set appropriate retention period for CloudWatch log groups"
+  references:
+    - "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html"
+
+- id: AWS-CLOUDWATCH-002
+  title: "CloudWatch Log Group Not Encrypted"
+  description: "CloudWatch log group is not encrypted"
+  severity: MEDIUM
+  category: "Encryption"
+  resource_types:
+    - aws_cloudwatch_log_group
+  conditions:
+    - path: "kms_key_id"
+      operator: "not_exists"
+  remediation: "Enable KMS encryption for CloudWatch log groups"
+  references:
+    - "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html"
