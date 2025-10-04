@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.responses import HTMLResponse
 import json
 import tempfile
@@ -84,6 +84,62 @@ async def api_scan_plan(plan_file: UploadFile = File(...), rules_file: UploadFil
     os.unlink(temp_plan_path)
     
     return scan_results
+
+
+@app.post("/api/cost")
+async def api_cost_analysis(
+    plan_file: UploadFile = File(...),
+    region: str = Form(None),
+    usage_hours: float = Form(730.0),
+    # format is accepted but server forces JSON output for machine consumption
+    output_format: str = Form("json")
+):
+    """
+    API endpoint that accepts a tfplan.json (or other infrastructure file),
+    runs the cost analysis and returns JSON results.
+    """
+    with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".json", encoding="utf-8") as tmp_plan:
+        content = await plan_file.read()
+        # write bytes decoded as utf-8; allow either text or bytes uploads
+        try:
+            tmp_plan.write(content.decode("utf-8"))
+        except Exception:
+            # fallback if already str-like
+            tmp_plan.write(str(content))
+        temp_plan_path = tmp_plan.name
+
+    # First try to run cost analysis directly by importing the analyzer class
+    try:
+        # Importing the command module should not modify files in commands/.
+        from infraware.commands.cost_analysis import CostAnalyzer
+
+        analyzer = CostAnalyzer()
+        # analyze_file_costs returns a plain dict suitable for JSON
+        result = analyzer.analyze_file_costs(temp_plan_path, region, usage_hours)
+
+        # Clean up temp file
+        try:
+            os.unlink(temp_plan_path)
+        except Exception:
+            pass
+
+        return result
+
+    except Exception:
+        # Fallback to subprocess-based CLI invocation (keeps behavior consistent if import fails)
+        command = ["infraware", "cost-analysis", temp_plan_path, "--format", "json", "--hours", str(usage_hours)]
+        if region:
+            command.extend(["--region", region])
+
+        try:
+            cost_results = run_infraware_command(command)
+        finally:
+            try:
+                os.unlink(temp_plan_path)
+            except Exception:
+                pass
+
+        return cost_results
 
 
 @app.get("/", response_class=HTMLResponse)
