@@ -1,0 +1,80 @@
+# AWS ALB/ELB Load Balancer Security Rules
+- id: AWS-ALB-001
+  title: "ALB Without HTTPS Listener"
+  description: "Application Load Balancer does not have HTTPS listeners configured"
+  severity: HIGH
+  category: "Transport Security"
+  resource_types:
+    - aws_lb
+    - aws_alb
+  conditions:
+    - path: "load_balancer_type"
+      operator: "equals"
+      value: "application"
+  remediation: "Configure HTTPS listeners for Application Load Balancers"
+  references:
+    - "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html"
+
+- id: AWS-ALB-002
+  title: "ALB Without Access Logs"
+  description: "Application Load Balancer does not have access logging enabled"
+  severity: MEDIUM
+  category: "Logging"
+  resource_types:
+    - aws_lb
+    - aws_alb
+  conditions:
+    - path: "access_logs.enabled"
+      operator: "equals"
+      value: false
+  remediation: "Enable access logs for load balancers"
+  references:
+    - "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html"
+
+- id: AWS-ALB-003
+  title: "ALB With HTTP to HTTPS Redirect Missing"
+  description: "ALB has HTTP listener but no redirect to HTTPS"
+  severity: MEDIUM
+  category: "Transport Security"
+  resource_types:
+    - aws_lb_listener
+  conditions:
+    - path: "protocol"
+      operator: "equals"
+      value: "HTTP"
+    - path: "default_action.type"
+      operator: "not_equals"
+      value: "redirect"
+  remediation: "Configure HTTP to HTTPS redirect for better security"
+  references:
+    - "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/listener-update-rules.html"
+
+- id: AWS-ELB-001
+  title: "Classic ELB Without HTTPS"
+  description: "Classic Elastic Load Balancer is not using HTTPS"
+  severity: HIGH
+  category: "Transport Security"
+  resource_types:
+    - aws_elb
+  conditions:
+    - path: "listener.protocol"
+      operator: "not_contains"
+      value: "HTTPS"
+  remediation: "Configure HTTPS listeners for Classic ELB"
+  references:
+    - "https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-https-load-balancers.html"
+
+- id: AWS-ELB-002
+  title: "ELB Cross-Zone Load Balancing Disabled"
+  description: "Elastic Load Balancer does not have cross-zone load balancing enabled"
+  severity: LOW
+  category: "Availability"
+  resource_types:
+    - aws_elb
+  conditions:
+    - path: "cross_zone_load_balancing"
+      operator: "equals"
+      value: false
+  remediation: "Enable cross-zone load balancing for better distribution"
+  references:
+    - "https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/enable-disable-crosszone-lb.html"

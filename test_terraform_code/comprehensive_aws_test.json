@@ -1,0 +1,156 @@
+{
+  "format_version": "1.1",
+  "terraform_version": "1.0.0",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_instance.web_server",
+          "mode": "managed",
+          "type": "aws_instance",
+          "name": "web_server",
+          "values": {
+            "ami": "ami-0abcdef1234567890",
+            "instance_type": "t3.micro",
+            "associate_public_ip_address": true,
+            "monitoring": false,
+            "vpc_security_group_ids": ["default"],
+            "metadata_options": {
+              "http_tokens": "optional"
+            },
+            "root_block_device": {
+              "encrypted": false,
+              "volume_size": 20
+            }
+          }
+        },
+        {
+          "address": "aws_db_instance.main_database",
+          "mode": "managed",
+          "type": "aws_db_instance",
+          "name": "main_database",
+          "values": {
+            "engine": "mysql",
+            "engine_version": "8.0",
+            "instance_class": "db.t3.micro",
+            "allocated_storage": 20,
+            "storage_encrypted": false,
+            "publicly_accessible": true,
+            "backup_retention_period": 3,
+            "multi_az": false,
+            "port": 3306,
+            "username": "admin",
+            "password": "hardcoded123"
+          }
+        },
+        {
+          "address": "aws_lambda_function.processor",
+          "mode": "managed",
+          "type": "aws_lambda_function",
+          "name": "processor",
+          "values": {
+            "function_name": "data-processor",
+            "runtime": "python3.9",
+            "handler": "lambda_function.lambda_handler",
+            "memory_size": 3200,
+            "role": "arn:aws:iam::123456789012:role/AdministratorAccess",
+            "environment": {
+              "variables": {
+                "DATABASE_PASSWORD": "secret123",
+                "API_KEY": "sk-1234567890abcdef"
+              }
+            }
+          }
+        },
+        {
+          "address": "aws_lb.application_lb",
+          "mode": "managed",
+          "type": "aws_lb",
+          "name": "application_lb",
+          "values": {
+            "name": "app-lb",
+            "load_balancer_type": "application",
+            "internal": false,
+            "access_logs": {
+              "enabled": false
+            }
+          }
+        },
+        {
+          "address": "aws_lb_listener.web_listener",
+          "mode": "managed",
+          "type": "aws_lb_listener",
+          "name": "web_listener",
+          "values": {
+            "protocol": "HTTP",
+            "port": 80,
+            "default_action": {
+              "type": "forward"
+            }
+          }
+        },
+        {
+          "address": "aws_cloudtrail.main_trail",
+          "mode": "managed",
+          "type": "aws_cloudtrail",
+          "name": "main_trail",
+          "values": {
+            "name": "main-trail",
+            "enable_logging": false,
+            "enable_log_file_validation": false
+          }
+        },
+        {
+          "address": "aws_cloudwatch_log_group.app_logs",
+          "mode": "managed",
+          "type": "aws_cloudwatch_log_group",
+          "name": "app_logs",
+          "values": {
+            "name": "/aws/lambda/processor"
+          }
+        },
+        {
+          "address": "aws_kms_key.data_key",
+          "mode": "managed",
+          "type": "aws_kms_key",
+          "name": "data_key",
+          "values": {
+            "description": "Key for data encryption",
+            "enable_key_rotation": false,
+            "policy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"kms:*\",\"Resource\":\"*\"}]}"
+          }
+        },
+        {
+          "address": "aws_iam_user_policy_attachment.admin_access",
+          "mode": "managed",
+          "type": "aws_iam_user_policy_attachment",
+          "name": "admin_access",
+          "values": {
+            "user": "developer",
+            "policy_arn": "arn:aws:iam::aws:policy/AdministratorAccess"
+          }
+        },
+        {
+          "address": "aws_iam_access_key.developer_key",
+          "mode": "managed",
+          "type": "aws_iam_access_key",
+          "name": "developer_key",
+          "values": {
+            "user": "developer"
+          }
+        },
+        {
+          "address": "aws_secretsmanager_secret.db_password",
+          "mode": "managed",
+          "type": "aws_secretsmanager_secret",
+          "name": "db_password",
+          "values": {
+            "name": "database-password",
+            "description": "Database password"
+          }
+        }
+      ]
+    }
+  },
+  "resource_changes": []
+}

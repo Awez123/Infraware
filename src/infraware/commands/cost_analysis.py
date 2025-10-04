@@ -186,20 +186,42 @@ class CostAnalyzer:
 cost_analyzer = CostAnalyzer()
 
 def cost_analysis_command(
-    file_path: str = typer.Argument(None, help="Path to infrastructure file (.tf, .json, .yaml)"),
-    aws: bool = typer.Option(False, "--aws", help="Show AWS pricing information"),
-    gcp: bool = typer.Option(False, "--gcp", help="Show GCP pricing information"),
-    azure: bool = typer.Option(False, "--azure", help="Show Azure pricing information"),
-    providers: bool = typer.Option(False, "--providers", help="List supported providers and regions"),
-    metadata: str = typer.Option(None, "--metadata", help="Show metadata for provider (aws, gcp, azure)"),
-    confidence: bool = typer.Option(False, "--confidence", help="Show pricing data confidence report"),
-    region: str = typer.Option(None, "--region", "-r", help="Target region for pricing"),
-    usage_hours: float = typer.Option(730, "--hours", "-h", help="Monthly usage hours [default: 730]"),
-    format: str = typer.Option("table", "--format", "-f", help="Output format (table, json, csv) [default: table]"),
+    file_path: str = typer.Argument(None, help="Infrastructure file path (Terraform .tf/.json, CloudFormation .yaml)"),
+    aws: bool = typer.Option(False, "--aws", help="Display AWS pricing data and supported services"),
+    gcp: bool = typer.Option(False, "--gcp", help="Display GCP pricing data and supported services"),
+    azure: bool = typer.Option(False, "--azure", help="Display Azure pricing data and supported services"),
+    providers: bool = typer.Option(False, "--providers", help="List all supported cloud providers and regions"),
+    metadata: str = typer.Option(None, "--metadata", help="Show detailed metadata for provider: aws, gcp, azure"),
+    confidence: bool = typer.Option(False, "--confidence", help="Display pricing data confidence and quality report"),
+    region: str = typer.Option(None, "--region", "-r", help="Target cloud region for pricing (e.g., us-east-1, eu-west-1)"),
+    usage_hours: float = typer.Option(730, "--hours", "-h", help="Monthly usage hours for cost calculation (default: 730)"),
+    format: str = typer.Option("table", "--format", "-f", help="Output format: table (default), json, csv"),
     provider_filter: str = typer.Option(None, "--provider", "-p", help="Filter confidence report by provider"),
-    min_confidence: int = typer.Option(0, "--min-confidence", help="Minimum confidence score (0-10) [default: 0]")
+    min_confidence: int = typer.Option(0, "--min-confidence", help="Minimum confidence score filter (0-10)")
 ):
-    """Analyze cloud infrastructure costs and show provider metadata via flags."""
+    """
+    💰 Multi-cloud infrastructure cost analysis and optimization tool.
+    
+    Analyzes Terraform plans, CloudFormation templates, and infrastructure
+    files to estimate monthly costs with region-aware pricing and optimization
+    recommendations.
+    
+    Examples:
+      infraware cost-analysis main.tf                          # Analyze Terraform file
+      infraware cost-analysis plan.json --region us-east-1     # Regional pricing
+      infraware cost-analysis infrastructure.yaml --format json # JSON output
+      infraware cost-analysis --providers                      # List supported providers
+      infraware cost-analysis --aws                           # Show AWS pricing info
+      infraware cost-analysis --confidence --min-confidence 8  # Quality report
+    
+    Features:
+      ✅ Multi-cloud support (AWS, GCP, Azure)
+      ✅ Region-aware pricing with 100+ regions
+      ✅ Confidence scoring for pricing accuracy
+      ✅ Cost optimization recommendations
+      ✅ Multiple output formats (table, JSON, CSV)
+      ✅ Usage-based modeling with custom hours
+    """
     action_flags = [bool(file_path), providers, bool(metadata), confidence, aws, gcp, azure]
     active_actions = sum(action_flags)
     if active_actions == 0:
