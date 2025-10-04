@@ -11,14 +11,14 @@ src/infraware.egg-info/entry_points.txt
 src/infraware.egg-info/requires.txt
 src/infraware.egg-info/top_level.txt
 src/infraware/commands/__init__.py
-<<<<<<< HEAD
 src/infraware/commands/cost.py
-=======
 src/infraware/commands/cost_analysis.py
 src/infraware/commands/enhanced_scan.py
->>>>>>> c676e1f815d5e5856289fd851740c8bcfcff0065
 src/infraware/commands/rules.py
 src/infraware/commands/scan.py
+src/infraware/commands/server.py
+src/infraware/server/__init__.py
+src/infraware/server/main.py
 src/infraware/utils/__init__.py
 src/infraware/utils/container_scanner.py
 src/infraware/utils/cve_database.py

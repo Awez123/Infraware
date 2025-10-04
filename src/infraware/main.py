@@ -5,27 +5,23 @@ Enhanced with CVE Database and Container Security Scanning
 """
 
 import typer
+import uvicorn  # <-- Import uvicorn to run the web server
 from pathlib import Path
 from rich.console import Console
 from typing import Optional
 
-<<<<<<< HEAD
-# Import the Typer "apps" from your command files
-from infraware.commands import scan, rules, cost
-=======
 # Import specific commands instead of the problematic apps
 from infraware.commands.scan import scan
 from infraware.commands.cost_analysis import cost_analysis_command
->>>>>>> c676e1f815d5e5856289fd851740c8bcfcff0065
 
 app = typer.Typer(
     help="🛡️ InfraWare v2.0 - Enterprise Infrastructure Security & Cost Platform\n\n" +
          "Comprehensive security scanner with 35+ AWS rules, 10K+ CVE database, \n" +
          "container security, secret detection, and multi-cloud cost analysis.\n\n" +
          "Quick Examples:\n" +
-         "  infraware scan plan.json                    # Scan infrastructure\n" +
-         "  infraware comprehensive ./project          # Full security scan\n" +
-         "  infraware cve-update                       # Update CVE database\n" +
+         "  infraware scan plan.json                  # Scan infrastructure\n" +
+         "  infraware comprehensive ./project         # Full security scan\n" +
+         "  infraware cve-update                      # Update CVE database\n" +
          "  infraware container-scan nginx:latest     # Scan container\n" +
          "  infraware cost-analysis file main.tf      # Analyze costs",
     add_completion=False
@@ -37,9 +33,6 @@ app.command("scan")(scan)
 # Add cost analysis command
 app.command("cost-analysis")(cost_analysis_command)
 
-<<<<<<< HEAD
-app.add_typer(cost.app, name="cost")
-=======
 @app.command("welcome")
 def welcome():
     """Show InfraWare branding and available commands."""
@@ -48,8 +41,8 @@ def welcome():
     # ASCII Art for InfraWare
     ascii_art = """
 [bold cyan]
-██╗███╗   ██╗███████╗██████╗  █████╗ ██╗    ██╗ █████╗ ██████╗ ███████╗
-██║████╗  ██║██╔════╝██╔══██╗██╔══██╗██║    ██║██╔══██╗██╔══██╗██╔════╝
+██╗███╗   ██╗███████╗██████╗  █████╗ ██╗     ██╗ █████╗ ██████╗ ███████╗
+██║████╗  ██║██╔════╝██╔══██╗██╔══██╗██║     ██║██╔══██╗██╔══██╗██╔════╝
 ██║██╔██╗ ██║█████╗  ██████╔╝███████║██║ █╗ ██║███████║██████╔╝█████╗  
 ██║██║╚██╗██║██╔══╝  ██╔══██╗██╔══██║██║███╗██║██╔══██║██╔══██╗██╔══╝  
 ██║██║ ╚████║██║     ██║  ██║██║  ██║╚███╔███╔╝██║  ██║██║  ██║███████╗
@@ -88,30 +81,46 @@ def welcome():
         ("cve-bulk-download", "Download 3 years of CVE data (enterprise - ~100K CVEs)"),
         ("cve-search", "Search CVE database for specific vulnerabilities"),
         ("cve-stats", "Show CVE database statistics"),
+        ("server", "Start the InfraWare web dashboard"), # <-- Added server command
         ("welcome", "Show this welcome message")
     ]
     
     for cmd, desc in commands:
-        console.print(f"  [cyan]{cmd:<15}[/cyan] {desc}")
+        console.print(f"  [cyan]{cmd:<17}[/cyan] {desc}")
     
     console.print(f"\n[dim]Use 'infraware <command> --help' for detailed command information[/dim]")
     console.print(f"[dim]Repository: https://github.com/Awez123/Infraware[/dim]\n")
 
-# Add the enhanced scanning commands
+# --- NEW: Server Command ---
+@app.command("server")
+def server_cmd(
+    host: str = typer.Option("127.0.0.1", "--host", help="The host to bind the server to."),
+    port: int = typer.Option(8000, "--port", help="The port to run the server on.")
+):
+    """🚀 Starts the InfraWare web server dashboard.\n\n
+    Launches a local web server to provide a graphical user interface
+    for scanning and viewing results.\n\n
+    
+    Examples:\n
+      infraware server              # Start server on default port 8000\n
+      infraware server --port 8080  # Start server on a custom port
+    """
+    console = Console()
+    console.print(f"[bold green]Starting InfraWare server...[/bold green]")
+    console.print(f"Dashboard will be available at [cyan]http://{host}:{port}[/cyan]")
+    
+    # We tell uvicorn the path to the FastAPI 'app' object
+    # The path is 'infraware.server.main:app'
+    uvicorn.run("infraware.server.main:app", host=host, port=port, reload=True)
+
+# (The rest of your existing commands remain the same)
+# ... secrets_cmd, comprehensive_cmd, cve commands, container commands ...
 @app.command("secrets")
 def secrets_cmd(
     target: str = typer.Argument(help="Path to file or directory to scan for secrets"),
     output_format: str = typer.Option("table", "--format", help="Output format: table (default) or json")
 ):
-    """🔍 Scan for hardcoded secrets and high-entropy strings.\n\n
-    Detects API keys, passwords, tokens, SSH keys, database credentials,\n
-    and other sensitive data in your codebase.\n\n
-    
-    Examples:\n
-      infraware secrets ./src                    # Scan source directory\n
-      infraware secrets config.py               # Scan specific file\n
-      infraware secrets ./app --format json     # JSON output for CI/CD
-    """
+    """🔍 Scan for hardcoded secrets and high-entropy strings."""
     console = Console()
     console.print(f"Scanning for secrets: [cyan]{target}[/cyan]")
     
@@ -134,7 +143,6 @@ def secrets_cmd(
             console.print(f"Total Secrets Found: [red]{summary.get('total_secrets', 0)}[/red]")
             console.print(f"Risk Score: [red]{summary.get('risk_score', 0)}[/red]")
             
-            # Show details of first few findings
             findings_list = report.get('findings', [])
             if findings_list:
                 from rich.table import Table
@@ -144,7 +152,7 @@ def secrets_cmd(
                 table.add_column("File", style="magenta")
                 table.add_column("Line", style="yellow")
                 
-                for finding in findings_list[:10]:  # Show first 10
+                for finding in findings_list[:10]:
                     table.add_row(
                         finding.get('type', 'unknown'),
                         finding.get('severity', 'unknown'),
@@ -166,15 +174,7 @@ def comprehensive_cmd(
     target: str = typer.Argument(help="Path to infrastructure files or project directory"),
     output_format: str = typer.Option("table", "--format", help="Output format: table (default) or json")
 ):
-    """🚀 Comprehensive security scan with CVE correlation and secret detection.\n\n
-    Combines infrastructure vulnerability scanning, secret detection, CVE\n
-    correlation, and security scoring in a single comprehensive analysis.\n\n
-    
-    Examples:\n
-      infraware comprehensive ./terraform        # Scan Terraform project\n
-      infraware comprehensive plan.json         # Scan Terraform plan\n
-      infraware comprehensive ./k8s --format json # Scan Kubernetes YAML
-    """
+    """🚀 Comprehensive security scan with CVE correlation and secret detection."""
     console = Console()
     console.print(f"Starting comprehensive scan: [cyan]{target}[/cyan]")
     
@@ -184,7 +184,6 @@ def comprehensive_cmd(
         'summary': {}
     }
     
-    # Secret scanning
     try:
         console.print("Scanning for secrets...")
         from infraware.utils.secret_scanner import EnhancedSecretScanner
@@ -201,7 +200,6 @@ def comprehensive_cmd(
     except Exception as e:
         console.print(f"[yellow]Warning: Secret scanning failed: {e}[/yellow]")
     
-    # Display results
     if output_format.lower() == "json":
         console.print_json(data=results)
     else:
@@ -215,19 +213,11 @@ def comprehensive_cmd(
         
         console.print("\nScan completed!")
 
-# CVE Database Commands
 @app.command("cve-update")
 def cve_update_cmd(
     force: bool = typer.Option(False, "--force", help="Force update even if database is recent")
 ):
-    """📡 Update CVE vulnerability database with latest threats.\n\n
-    Downloads recent CVEs from NIST NVD and GitHub Security Advisories\n
-    to enhance infrastructure scanning with current vulnerability data.\n\n
-    
-    Examples:\n
-      infraware cve-update                       # Standard update\n
-      infraware cve-update --force               # Force immediate update
-    """
+    """📡 Update CVE vulnerability database with latest threats."""
     console = Console()
     console.print("Updating CVE database...")
     
@@ -253,20 +243,13 @@ def cve_update_cmd(
 
 @app.command("cve-bulk-download")
 def cve_bulk_download_cmd():
-    """🌐 Download enterprise CVE database (100K+ CVEs, 3 years).\n\n
-    Real-time streaming download of comprehensive vulnerability database\n
-    covering 2023-2025 with live progress updates. Enterprise-grade\n
-    coverage for maximum security detection capability.\n\n
-    
-    Note: Downloads ~100,000 CVEs in 10-15 minutes with real-time feedback.
-    """
+    """🌐 Download enterprise CVE database (100K+ CVEs, 3 years)."""
     console = Console()
     console.print("[bold yellow]🚀 Starting REAL-TIME CVE database download...[/bold yellow]")
     console.print("[dim]Live streaming download with real-time progress updates[/dim]")
     console.print("[dim]3 years (2023-2025) of CVE data with instant feedback[/dim]")
     console.print(f"[dim]Expected: ~100,000+ CVEs in 10-15 minutes[/dim]\n")
     
-    # Ask for confirmation
     confirm = typer.confirm("Start the real-time enterprise download?")
     if not confirm:
         console.print("Download cancelled.")
@@ -290,7 +273,6 @@ def cve_bulk_download_cmd():
         console.print(f"Updated CVEs: [yellow]{stats.get('updated', 0):,}[/yellow]")
         console.print(f"Total Processed: [cyan]{stats.get('processed', 0):,}[/cyan]")
         
-        # Show final database stats
         console.print(f"\n[bold blue]📊 Final Database Statistics:[/bold blue]")
         final_stats = db.get_database_stats()
         console.print(f"Total CVEs: [green]{final_stats['total_cves']:,}[/green]")
@@ -307,15 +289,7 @@ def cve_search_cmd(
     limit: int = typer.Option(10, "--limit", help="Maximum results to return (default: 10)"),
     output_format: str = typer.Option("table", "--format", help="Output format: table (default) or json")
 ):
-    """🔍 Search CVE vulnerability database by technology or keywords.\n\n
-    Search through thousands of CVEs to find vulnerabilities affecting\n
-    specific technologies, products, or vendors in your infrastructure.\n\n
-    
-    Examples:\n
-      infraware cve-search "apache"                        # Find Apache CVEs\n
-      infraware cve-search "kubernetes" --severity CRITICAL # Critical K8s CVEs\n
-      infraware cve-search "docker" --limit 5 --format json # Top 5 Docker CVEs
-    """
+    """🔍 Search CVE vulnerability database by technology or keywords."""
     console = Console()
     
     try:
@@ -351,16 +325,7 @@ def cve_search_cmd(
 
 @app.command("cve-stats")
 def cve_stats_cmd():
-    """📊 Display CVE database statistics and health metrics.\n\n
-    Shows total CVEs, recent additions, database size, severity distribution,\n
-    and last update information for your local vulnerability database.\n\n
-    
-    Example Output:\n
-      Total CVEs: 12,547\n
-      Recent CVEs (30 days): 234\n
-      Database Size: 45.2 MB\n
-      Critical: 15% | High: 25% | Medium: 45% | Low: 15%
-    """
+    """📊 Display CVE database statistics and health metrics."""
     console = Console()
     
     try:
@@ -376,7 +341,6 @@ def cve_stats_cmd():
         console.print(f"Database Size: [green]{stats['database_size_mb']:.1f} MB[/green]")
         console.print(f"Last Update: [magenta]{stats.get('last_update', 'Never')}[/magenta]")
         
-        # Severity distribution table
         table = Table(title="Severity Distribution")
         table.add_column("Severity", style="bold")
         table.add_column("Count", style="cyan")
@@ -393,22 +357,13 @@ def cve_stats_cmd():
         console.print(f"[red]Error getting CVE stats: {e}[/red]")
         raise typer.Exit(1)
 
-# Container Security Commands
 @app.command("container-scan")
 def container_scan_cmd(
     image: str = typer.Argument(help="Container image name:tag or image ID"),
     include_layers: bool = typer.Option(True, "--layers/--no-layers", help="Include layer-by-layer analysis"),
     output_format: str = typer.Option("table", "--format", help="Output format: table (default) or json")
 ):
-    """🐳 Comprehensive container image security scanning.\n\n
-    Analyzes container images for vulnerabilities, secrets, misconfigurations,\n
-    and provides security recommendations with layer-by-layer analysis.\n\n
-    
-    Examples:\n
-      infraware container-scan nginx:latest              # Scan Nginx image\n
-      infraware container-scan ubuntu:20.04 --no-layers # Skip layer analysis\n
-      infraware container-scan alpine:3.14 --format json # JSON output
-    """
+    """🐳 Comprehensive container image security scanning."""
     console = Console()
     console.print(f"Scanning container image: [cyan]{image}[/cyan]")
     
@@ -427,13 +382,11 @@ def container_scan_cmd(
         if output_format.lower() == "json":
             console.print_json(data=result.to_dict())
         else:
-            # Display scan results
             console.print(f"\n[bold green]Container Security Scan Results[/bold green]")
             console.print(f"Image: [cyan]{result.image_name}[/cyan]")
             console.print(f"Size: [yellow]{result.size_mb} MB[/yellow]")
             console.print(f"Security Score: [{'green' if result.security_score > 80 else 'yellow' if result.security_score > 60 else 'red'}]{result.security_score:.1f}/100[/]")
             
-            # Vulnerabilities table
             if result.vulnerabilities:
                 vuln_table = Table(title="Vulnerabilities Found")
                 vuln_table.add_column("CVE ID", style="cyan")
@@ -441,7 +394,7 @@ def container_scan_cmd(
                 vuln_table.add_column("Severity", style="bold")
                 vuln_table.add_column("Score", style="yellow")
                 
-                for vuln in result.vulnerabilities[:10]:  # Show first 10
+                for vuln in result.vulnerabilities[:10]:
                     vuln_table.add_row(
                         vuln.cve_id,
                         vuln.package_name,
@@ -454,14 +407,13 @@ def container_scan_cmd(
                 if len(result.vulnerabilities) > 10:
                     console.print(f"... and {len(result.vulnerabilities) - 10} more vulnerabilities")
                     
-            # Secrets table
             if result.secrets:
                 secrets_table = Table(title="Secrets Found")
                 secrets_table.add_column("Type", style="cyan")
                 secrets_table.add_column("File", style="magenta")
                 secrets_table.add_column("Severity", style="bold")
                 
-                for secret in result.secrets[:5]:  # Show first 5
+                for secret in result.secrets[:5]:
                     secrets_table.add_row(
                         secret['type'],
                         secret['file_path'],
@@ -470,7 +422,6 @@ def container_scan_cmd(
                     
                 console.print(secrets_table)
                 
-            # Recommendations
             if result.recommendations:
                 console.print(f"\n[bold blue]Security Recommendations:[/bold blue]")
                 for i, rec in enumerate(result.recommendations[:5], 1):
@@ -485,15 +436,7 @@ def dockerfile_scan_cmd(
     dockerfile: str = typer.Argument(help="Path to Dockerfile to analyze"),
     output_format: str = typer.Option("table", "--format", help="Output format: table (default) or json")
 ):
-    """📋 Analyze Dockerfile for security best practices and vulnerabilities.\n\n
-    Scans Dockerfile instructions for security issues like root user usage,\n
-    hardcoded secrets, missing health checks, and insecure configurations.\n\n
-    
-    Examples:\n
-      infraware dockerfile-scan Dockerfile           # Scan main Dockerfile\n
-      infraware dockerfile-scan docker/Dockerfile    # Scan custom path\n
-      infraware dockerfile-scan Dockerfile --format json # JSON for CI/CD
-    """
+    """📋 Analyze Dockerfile for security best practices and vulnerabilities."""
     console = Console()
     console.print(f"Scanning Dockerfile: [cyan]{dockerfile}[/cyan]")
     
@@ -543,15 +486,7 @@ def container_runtime_cmd(
     container_id: str = typer.Argument(help="Running container ID or name"),
     output_format: str = typer.Option("table", "--format", help="Output format: table (default) or json")
 ):
-    """⚡ Analyze running container for runtime security issues.\n\n
-    Inspects live containers for privilege escalation, network exposure,\n
-    volume mounts, environment variables, and runtime configurations.\n\n
-    
-    Examples:\n
-      infraware container-runtime web-app            # Scan by name\n
-      infraware container-runtime abc123def456       # Scan by ID\n
-      infraware container-runtime nginx --format json # JSON output
-    """
+    """⚡ Analyze running container for runtime security issues."""
     console = Console()
     console.print(f"Scanning running container: [cyan]{container_id}[/cyan]")
     
@@ -598,7 +533,6 @@ def container_runtime_cmd(
     except Exception as e:
         console.print(f"[red]Error scanning container runtime: {e}[/red]")
         raise typer.Exit(1)
->>>>>>> c676e1f815d5e5856289fd851740c8bcfcff0065
 
 if __name__ == "__main__":
     import sys
@@ -607,3 +541,4 @@ if __name__ == "__main__":
         welcome()
         sys.exit(0)
     app()
+

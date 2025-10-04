@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfraWare Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-dark: #1a1a1a;
+            --bg-medium: #2c2c2c;
+            --bg-light: #3a3a3a;
+            --accent-cyan: #00e5ff;
+            --text-light: #e0e0e0;
+            --text-dark: #b0b0b0;
+            --border-color: #444;
+        }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Inter', sans-serif;
+        }
+        .sidebar { background-color: var(--bg-medium); }
+        .main-content { background-color: var(--bg-dark); }
+        .card { background-color: var(--bg-medium); border: 1px solid var(--border-color); }
+        .btn-primary { background-color: var(--accent-cyan); color: var(--bg-dark); font-weight: bold; transition: background-color 0.3s; }
+        .btn-primary:hover { background-color: #00b8d4; }
+        .file-input-label { background-color: var(--bg-light); border: 2px dashed var(--border-color); }
+        .file-input-label:hover { border-color: var(--accent-cyan); }
+        .error-box { background-color: #4d1f1f; border: 1px solid #993d3d; color: #ffcccc; }
+        .result-card { background-color: var(--bg-medium); }
+        .severity-critical { color: #ff5555; }
+        .severity-high { color: #ffaa55; }
+        .severity-medium { color: #ffff55; }
+        .severity-low { color: #55aaff; }
+        .severity-info { color: #aaaaaa; }
+        .form-input, .form-select {
+            background-color: var(--bg-light);
+            border: 1px solid var(--border-color);
+            color: var(--text-light);
+        }
+        .form-checkbox {
+            accent-color: var(--accent-cyan);
+        }
+        .loader {
+            border: 4px solid var(--bg-light);
+            border-top: 4px solid var(--accent-cyan);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="flex h-screen">
+
+    <!-- Sidebar -->
+    <aside class="sidebar w-64 p-6 flex flex-col">
+        <h1 class="text-2xl font-bold text-white mb-10">
+            <span class="text-accent-cyan">Infra</span>Ware
+        </h1>
+        <nav>
+            <ul>
+                <li class="mb-4">
+                    <a href="#" class="flex items-center p-3 rounded-lg bg-accent-cyan text-gray-900 font-bold">
+                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2zM9 22V12h6v10"></path></svg>
+                        Scan File
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content flex-1 p-8 overflow-y-auto">
+        <h2 class="text-3xl font-bold mb-6">Security Scan</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Left Column: Inputs -->
+            <div>
+                <!-- Plan File Upload -->
+                <div class="card p-6 rounded-lg mb-8">
+                    <h3 class="text-xl font-semibold mb-4">Upload Terraform Plan</h3>
+                    <p class="text-text-dark mb-4 text-sm">Select your `tfplan.json` file to begin a security scan.</p>
+                    <label for="plan-file" class="file-input-label flex justify-center items-center w-full h-24 rounded-lg cursor-pointer">
+                        <div class="text-center">
+                            <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-4-4V7a4 4 0 014-4h5l4 4v11a2 2 0 01-2 2H9a2 2 0 01-2-2v-1z"></path></svg>
+                            <p class="mt-1 text-sm text-gray-400"><span id="plan-file-name">Choose File</span></p>
+                        </div>
+                    </label>
+                    <input type="file" id="plan-file" class="hidden" accept=".json">
+                </div>
+
+                <!-- Custom Rules Upload -->
+                <div class="card p-6 rounded-lg mb-8">
+                    <h3 class="text-xl font-semibold mb-4">Upload Custom Rules (Optional)</h3>
+                     <p class="text-text-dark mb-4 text-sm">Provide a `.yaml` file containing your custom rules.</p>
+                    <label for="rules-file" class="file-input-label flex justify-center items-center w-full h-24 rounded-lg cursor-pointer">
+                        <div class="text-center">
+                            <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            <p class="mt-1 text-sm text-gray-400"><span id="rules-file-name">Choose Rules File</span></p>
+                        </div>
+                    </label>
+                    <input type="file" id="rules-file" class="hidden" accept=".yaml,.yml">
+                </div>
+
+                <!-- Advanced Options -->
+                <div class="card p-6 rounded-lg mb-8">
+                    <h3 class="text-xl font-semibold mb-4">Advanced Scan Options</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="severity-filter" class="block text-sm font-medium text-text-light mb-1">Filter by Severity</label>
+                            <select id="severity-filter" class="form-select w-full rounded-md">
+                                <option value="">All Severities</option>
+                                <option value="CRITICAL">Critical</option>
+                                <option value="HIGH">High</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="LOW">Low</option>
+                                <option value="INFO">Info</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="cve-filter" class="block text-sm font-medium text-text-light mb-1">Filter by CVE ID</label>
+                            <input type="text" id="cve-filter" class="form-input w-full rounded-md" placeholder="e.g., CVE-2021-44228">
+                        </div>
+                        <div>
+                            <label for="tags-filter" class="block text-sm font-medium text-text-light mb-1">Filter by Tags (comma-separated)</label>
+                            <input type="text" id="tags-filter" class="form-input w-full rounded-md" placeholder="e.g., encryption,data-protection">
+                        </div>
+                        <div class="flex items-center">
+                            <input id="show-remediation" type="checkbox" class="form-checkbox h-4 w-4 rounded">
+                            <label for="show-remediation" class="ml-2 block text-sm text-text-light">Show Remediation Steps</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="scan-button" class="btn-primary w-full py-3 rounded-lg text-lg">Scan Now</button>
+            </div>
+
+            <!-- Right Column: Results -->
+            <div id="results-container">
+                <div class="flex items-center justify-center h-full" id="placeholder">
+                    <div class="text-center text-text-dark">
+                        <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <p class="mt-2">Scan results will be displayed here.</p>
+                    </div>
+                </div>
+                <div id="loader" class="hidden flex items-center justify-center h-full">
+                    <div class="loader"></div>
+                </div>
+                <div id="error-box" class="error-box p-4 rounded-lg hidden"></div>
+                <div id="results-content" class="hidden space-y-4"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const planFileInput = document.getElementById('plan-file');
+        const rulesFileInput = document.getElementById('rules-file');
+        const scanButton = document.getElementById('scan-button');
+        const resultsContainer = document.getElementById('results-container');
+        const resultsContent = document.getElementById('results-content');
+        const errorBox = document.getElementById('error-box');
+        const loader = document.getElementById('loader');
+        const placeholder = document.getElementById('placeholder');
+        
+        // Advanced option inputs
+        const severityFilter = document.getElementById('severity-filter');
+        const cveFilter = document.getElementById('cve-filter');
+        const tagsFilter = document.getElementById('tags-filter');
+        const showRemediation = document.getElementById('show-remediation');
+
+        planFileInput.addEventListener('change', () => {
+            document.getElementById('plan-file-name').textContent = planFileInput.files[0] ? planFileInput.files[0].name : 'Choose File';
+        });
+        rulesFileInput.addEventListener('change', () => {
+            document.getElementById('rules-file-name').textContent = rulesFileInput.files[0] ? rulesFileInput.files[0].name : 'Choose Rules File';
+        });
+
+        scanButton.addEventListener('click', scanNow);
+
+        async function scanNow() {
+            const planFile = planFileInput.files[0];
+            const rulesFile = rulesFileInput.files[0];
+
+            if (!planFile) {
+                showError("Please select a Terraform plan file.");
+                return;
+            }
+
+            // Prepare UI for loading state
+            showLoading();
+
+            const formData = new FormData();
+            formData.append('plan_file', planFile);
+            if (rulesFile) {
+                formData.append('rules_file', rulesFile);
+            }
+            // Append advanced options to FormData
+            formData.append('severity_filter', severityFilter.value);
+            formData.append('cve_filter', cveFilter.value);
+            formData.append('tags_filter', tagsFilter.value);
+            formData.append('show_remediation', showRemediation.checked);
+
+            try {
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'An unknown error occurred.');
+                }
+
+                const results = await response.json();
+                displayResults(results);
+
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+        
+        function getSeverityClass(severity) {
+            const s = severity.toUpperCase();
+            if (s === 'CRITICAL') return 'severity-critical';
+            if (s === 'HIGH') return 'severity-high';
+            if (s === 'MEDIUM') return 'severity-medium';
+            if (s === 'LOW') return 'severity-low';
+            return 'severity-info';
+        }
+
+        function displayResults(data) {
+            resultsContent.innerHTML = ''; // Clear previous results
+
+            // --- Display Summary ---
+            const summary = data.summary;
+            if (summary) {
+                const summaryCard = document.createElement('div');
+                summaryCard.className = 'card p-4 rounded-lg';
+                summaryCard.innerHTML = `
+                    <h3 class="font-bold text-lg mb-2">Scan Summary</h3>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <p>Total Vulnerabilities: <span class="font-bold text-accent-cyan">${summary.total_vulnerabilities}</span></p>
+                        <p>Risk Score: <span class="font-bold text-accent-cyan">${summary.risk_score.toFixed(1)} / 10.0</span></p>
+                    </div>
+                `;
+                resultsContent.appendChild(summaryCard);
+            }
+
+            // --- Display Vulnerabilities ---
+            const vulnerabilities = data.vulnerabilities || [];
+            if (vulnerabilities.length === 0) {
+                 const noVulnCard = document.createElement('div');
+                noVulnCard.className = 'card p-4 rounded-lg mt-4 text-center';
+                noVulnCard.innerHTML = `<p class="text-green-400 font-semibold">✅ No vulnerabilities found!</p>`;
+                resultsContent.appendChild(noVulnCard);
+            } else {
+                vulnerabilities.forEach(vuln => {
+                    const vulnCard = document.createElement('div');
+                    vulnCard.className = 'result-card p-4 rounded-lg';
+                    
+                    let remediationHTML = '';
+                    if (showRemediation.checked && vuln.remediation) {
+                        remediationHTML = `<p class="text-sm mt-2"><strong class="text-green-400">Remediation:</strong> ${vuln.remediation}</p>`;
+                    }
+
+                    vulnCard.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-lg">${vuln.title}</h4>
+                            <span class="font-semibold text-sm px-2 py-1 rounded-md ${getSeverityClass(vuln.severity)}">${vuln.severity}</span>
+                        </div>
+                        <p class="text-sm text-text-dark mt-1">${vuln.id} | Score: ${vuln.severity_score}</p>
+                        <p class="text-sm mt-2">${vuln.description}</p>
+                        <p class="text-sm mt-2"><strong>Resource:</strong> <code class="bg-bg-dark px-1 rounded">${vuln.resource.type}.${vuln.resource.name}</code></p>
+                        ${remediationHTML}
+                    `;
+                    resultsContent.appendChild(vulnCard);
+                });
+            }
+
+            showResults();
+        }
+
+        function showLoading() {
+            placeholder.classList.add('hidden');
+            errorBox.classList.add('hidden');
+            resultsContent.classList.add('hidden');
+            loader.classList.remove('hidden');
+        }
+
+        function showResults() {
+            loader.classList.add('hidden');
+            resultsContent.classList.remove('hidden');
+        }
+
+        function showError(message) {
+            loader.classList.add('hidden');
+            placeholder.classList.add('hidden');
+            errorBox.textContent = `Error: ${message}`;
+            errorBox.classList.remove('hidden');
+            resultsContent.classList.add('hidden');
+        }
+    </script>
+
+</body>
+</html>
+
