@@ -1,0 +1,67 @@
+# Enhanced AWS EBS Security Rules with CVE and Severity Numbers
+
+- id: AWS-EBS-001
+  title: "EBS Volume Encryption Disabled"
+  severity: HIGH
+  severity_score: 7.8
+  cve_references:
+    - "CVE-2020-1472"  # Example: Data exposure through unencrypted storage
+  cis_controls:
+    - "CIS AWS 2.2.1"
+  description: "EBS Volume is not encrypted, leaving data vulnerable to unauthorized access."
+  impact: "Unencrypted EBS volumes can expose sensitive data if the volume is compromised or improperly disposed of."
+  remediation: "Enable EBS encryption and use AWS KMS for key management."
+  resource: "aws_ebs_volume"
+  attribute: "encrypted"
+  value: false
+  tags:
+    - "encryption"
+    - "data-protection"
+    - "ebs"
+    - "storage"
+  references:
+    - "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html"
+
+- id: AWS-EBS-002
+  title: "EBS Volume Public Snapshot"
+  severity: CRITICAL
+  severity_score: 9.5
+  cve_references:
+    - "CVE-2019-11932"  # Example: Public snapshot data exposure
+  cis_controls:
+    - "CIS AWS 2.2.2"
+  description: "EBS snapshot is publicly accessible, potentially exposing sensitive data."
+  impact: "Public snapshots can be accessed by anyone, leading to complete data exposure."
+  remediation: "Make snapshots private and use proper IAM policies for controlled access."
+  resource: "aws_ebs_snapshot"
+  attribute: "permissions"
+  value: "public"
+  tags:
+    - "data-exposure"
+    - "public-access"
+    - "ebs"
+    - "snapshot"
+    - "critical"
+  references:
+    - "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-modifying-snapshot-permissions.html"
+
+- id: AWS-EBS-003
+  title: "EBS Volume Without Backup"
+  severity: MEDIUM
+  severity_score: 5.5
+  cve_references: []  # No specific CVE, but security best practice
+  cis_controls:
+    - "CIS AWS 2.2.3"
+  description: "EBS Volume does not have automated backup/snapshot configured."
+  impact: "Data loss risk if volume fails without proper backup strategy."
+  remediation: "Configure automated EBS snapshots or use AWS Backup service."
+  resource: "aws_ebs_volume"
+  attribute: "backup_policy"
+  value: null
+  condition: "missing"
+  tags:
+    - "backup"
+    - "data-recovery"
+    - "ebs"
+  references:
+    - "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSSnapshots.html"

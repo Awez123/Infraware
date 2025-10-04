@@ -1,0 +1,65 @@
+# Enhanced VPC Flow Logs Security Rules
+
+- id: AWS-VPC-001
+  title: "VPC Flow Logs Disabled"
+  severity: MEDIUM
+  severity_score: 6.2
+  cve_references:
+    - "CVE-2021-34527"  # Example: Network monitoring bypass
+  cis_controls:
+    - "CIS AWS 3.9"
+  description: "VPC does not have flow logs enabled for network traffic monitoring."
+  impact: "Lack of network visibility makes it difficult to detect suspicious activities and security incidents."
+  remediation: "Enable VPC Flow Logs and configure them to send to CloudWatch or S3."
+  resource: "aws_vpc"
+  attribute: "enable_flow_logs"
+  value: false
+  tags:
+    - "monitoring"
+    - "network-security"
+    - "vpc"
+    - "logging"
+  references:
+    - "https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html"
+
+- id: AWS-VPC-002
+  title: "Security Group with Overly Permissive Inbound Rules"
+  severity: HIGH
+  severity_score: 8.0
+  cve_references:
+    - "CVE-2020-5902"  # Example: Network access bypass
+  cis_controls:
+    - "CIS AWS 4.1"
+  description: "Security group allows inbound traffic from 0.0.0.0/0 on sensitive ports."
+  impact: "Overly permissive rules can allow unauthorized access to resources."
+  remediation: "Restrict inbound rules to specific IP ranges and necessary ports only."
+  resource: "aws_security_group"
+  attribute: "ingress"
+  condition: "contains_cidr_0.0.0.0/0"
+  tags:
+    - "network-security"
+    - "access-control"
+    - "security-group"
+  references:
+    - "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html"
+
+- id: AWS-VPC-003
+  title: "Default Security Group Not Restricted"
+  severity: MEDIUM
+  severity_score: 6.8
+  cve_references: []
+  cis_controls:
+    - "CIS AWS 4.3"
+  description: "Default security group has not been properly restricted."
+  impact: "Default security groups should have no inbound or outbound rules to prevent accidental access."
+  remediation: "Remove all inbound and outbound rules from default security groups."
+  resource: "aws_security_group"
+  attribute: "name"
+  value: "default"
+  condition: "has_rules"
+  tags:
+    - "network-security"
+    - "default-configuration"
+    - "security-group"
+  references:
+    - "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html"

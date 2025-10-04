@@ -1,0 +1,82 @@
+# AWS IAM Security Rules
+- id: AWS-IAM-001
+  title: "IAM User With Full Admin Access"
+  description: "IAM user has overly broad administrative permissions"
+  severity: CRITICAL
+  category: "Access Management"
+  resource_types:
+    - aws_iam_user_policy_attachment
+    - aws_iam_role_policy_attachment
+  conditions:
+    - path: "policy_arn"
+      operator: "equals"
+      value: "arn:aws:iam::aws:policy/AdministratorAccess"
+  remediation: "Use least privilege principle and create specific IAM policies"
+  references:
+    - "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
+
+- id: AWS-IAM-002
+  title: "IAM Policy With Wildcard Actions"
+  description: "IAM policy contains wildcard (*) actions which grant excessive permissions"
+  severity: HIGH
+  category: "Access Management"
+  resource_types:
+    - aws_iam_policy
+    - aws_iam_role_policy
+    - aws_iam_user_policy
+  conditions:
+    - path: "policy"
+      operator: "contains"
+      value: '"Action": "*"'
+  remediation: "Specify explicit actions instead of using wildcards"
+  references:
+    - "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html"
+
+- id: AWS-IAM-003
+  title: "IAM Policy With Wildcard Resources"
+  description: "IAM policy allows access to all resources (*) which is overly permissive"
+  severity: HIGH
+  category: "Access Management"
+  resource_types:
+    - aws_iam_policy
+    - aws_iam_role_policy
+    - aws_iam_user_policy
+  conditions:
+    - path: "policy"
+      operator: "contains"
+      value: '"Resource": "*"'
+  remediation: "Specify explicit resource ARNs instead of using wildcards"
+  references:
+    - "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html"
+
+- id: AWS-IAM-004
+  title: "IAM Role Without External ID"
+  description: "IAM role for cross-account access lacks external ID for additional security"
+  severity: MEDIUM
+  category: "Access Management"
+  resource_types:
+    - aws_iam_role
+  conditions:
+    - path: "assume_role_policy"
+      operator: "contains"
+      value: '"AWS":'
+    - path: "assume_role_policy"
+      operator: "not_contains"
+      value: '"sts:ExternalId"'
+  remediation: "Add external ID condition for cross-account IAM roles"
+  references:
+    - "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-user_externalid.html"
+
+- id: AWS-IAM-005
+  title: "IAM User With Programmatic Access Only"
+  description: "IAM user has access keys but should use IAM roles instead"
+  severity: MEDIUM
+  category: "Access Management"
+  resource_types:
+    - aws_iam_access_key
+  conditions:
+    - path: "user"
+      operator: "exists"
+  remediation: "Use IAM roles and temporary credentials instead of long-term access keys"
+  references:
+    - "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html"
