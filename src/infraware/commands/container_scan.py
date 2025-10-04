@@ -20,28 +20,40 @@ def container_scan_cmd(
             return await scanner.scan_image(image, include_layers)
 
         result = asyncio.run(scan())
+        # Normalize result to dict for JSON output and programmatic consumption
+        result_dict = result.to_dict() if hasattr(result, 'to_dict') else (result if isinstance(result, dict) else {})
 
         if output_format.lower() == "json":
-            console.print_json(data=result.to_dict())
+            console.print_json(data=result_dict)
         else:
             console.print(f"\n[bold green]Container Security Scan Results[/bold green]")
             console.print(f"Image: [cyan]{result.image_name}[/cyan]")
             console.print(f"Size: [yellow]{result.size_mb} MB[/yellow]")
-            console.print(f"Security Score: [{'green' if result.security_score > 80 else 'yellow' if result.security_score > 60 else 'red'}]{result.security_score:.1f}/100[/]")
+            score = getattr(result, 'security_score', result_dict.get('security_score', 100.0))
+            console.print(f"Security Score: [{'green' if score > 80 else 'yellow' if score > 60 else 'red'}]{score:.1f}/100[/]")
 
-            if result.vulnerabilities:
+            if result_dict.get('vulnerabilities'):
                 vuln_table = Table(title="Vulnerabilities Found")
                 vuln_table.add_column("CVE ID", style="cyan")
                 vuln_table.add_column("Package", style="magenta")
                 vuln_table.add_column("Severity", style="bold")
                 vuln_table.add_column("Score", style="yellow")
 
-                for vuln in result.vulnerabilities[:10]:
+                # vulnerabilities might be dataclasses or dicts
+                for vuln in result_dict.get('vulnerabilities', [])[:10]:
+                    if hasattr(vuln, 'to_dict'):
+                        v = vuln.to_dict()
+                    elif isinstance(vuln, dict):
+                        v = vuln
+                    else:
+                        # best-effort conversion
+                        v = {k: getattr(vuln, k, '') for k in ['cve_id', 'package_name', 'severity', 'cvss_score']}
+
                     vuln_table.add_row(
-                        vuln.cve_id,
-                        vuln.package_name,
-                        vuln.severity,
-                        str(vuln.cvss_score)
+                        str(v.get('cve_id', 'N/A')),
+                        str(v.get('package_name', 'N/A')),
+                        str(v.get('severity', 'N/A')),
+                        str(v.get('cvss_score', 'N/A'))
                     )
 
                 console.print(vuln_table)
@@ -49,17 +61,17 @@ def container_scan_cmd(
                 if len(result.vulnerabilities) > 10:
                     console.print(f"... and {len(result.vulnerabilities) - 10} more vulnerabilities")
 
-            if result.secrets:
+            if result_dict.get('secrets'):
                 secrets_table = Table(title="Secrets Found")
                 secrets_table.add_column("Type", style="cyan")
                 secrets_table.add_column("File", style="magenta")
                 secrets_table.add_column("Severity", style="bold")
 
-                for secret in result.secrets[:5]:
+                for secret in result_dict.get('secrets', [])[:5]:
                     secrets_table.add_row(
-                        secret['type'],
-                        secret['file_path'],
-                        secret['severity']
+                        secret.get('type', 'N/A'),
+                        secret.get('file_path', 'N/A'),
+                        secret.get('severity', 'N/A')
                     )
 
                 console.print(secrets_table)

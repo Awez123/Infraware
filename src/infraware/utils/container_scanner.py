@@ -11,6 +11,7 @@ from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
 from pathlib import Path
 import hashlib
+import uuid
 import base64
 import asyncio
 import aiohttp
@@ -90,42 +91,42 @@ class ContainerSecurityScanner:
     async def scan_image(self, image_name: str, include_layers: bool = True) -> ContainerScanResult:
         """Comprehensive container image security scan."""
         print(f"Scanning container image: {image_name}")
-        
+
         # Pull image if not available locally
         image = await self._pull_image(image_name)
         if not image:
             raise ValueError(f"Could not pull or find image: {image_name}")
-            
+
         # Extract image metadata
         image_info = self._extract_image_info(image)
-        
-        # Scan for vulnerabilities
+
+        # Scan for vulnerabilities (pass image object then image name)
         vulnerabilities = await self._scan_vulnerabilities(image, image_name)
-        
+
         # Analyze layers
         layers = []
         if include_layers:
             layers = await self._analyze_layers(image)
-            
+
         # Scan for secrets
-        secrets = await self._scan_container_secrets(image)
-        
+        secrets = await self._scan_container_secrets(image, image_name)
+
         # Analyze packages
         packages = await self._analyze_packages(image)
-        
+
         # Get OS information
-        os_info = await self._get_os_info(image)
-        
+        os_info = await self._get_os_info(image, image_name)
+
         # Calculate security score
         security_score = self._calculate_security_score(vulnerabilities, secrets)
-        
+
         # Generate recommendations
         recommendations = self._generate_recommendations(vulnerabilities, secrets, packages)
-        
+
         return ContainerScanResult(
             image_name=image_name,
-            image_id=image.id,
-            size_mb=round(image.attrs.get('Size', 0) / (1024 * 1024), 2),
+            image_id=image.id if hasattr(image, 'id') else getattr(image, 'short_id', ''),
+            size_mb=round(getattr(image, 'attrs', {}).get('Size', 0) / (1024 * 1024), 2),
             layers=layers,
             vulnerabilities=vulnerabilities,
             dockerfile_issues=[],  # Will be populated if Dockerfile is provided
@@ -263,42 +264,102 @@ class ContainerSecurityScanner:
         
     async def _scan_vulnerabilities(self, image, image_name: str) -> List[ContainerVulnerability]:
         """Scan image for known vulnerabilities."""
-        vulnerabilities = []
-        
-        # This would integrate with vulnerability databases
-        # For now, we'll simulate with some common vulnerabilities
-        
-        # Extract package information and check against CVE database
+        vulnerabilities: List[ContainerVulnerability] = []
+
+        # Use docker create/start/exec/remove flow so we control lifecycle and cleanup.
+        import subprocess as _subp
+
+        tmp_cid = None
         try:
-            # Run container to extract package info
-            container = self.docker_client.containers.run(
-                image_name,
-                command='sleep 10',
-                detach=True,
-                remove=True
-            )
-            
-            # Get package list (example for Debian/Ubuntu)
-            try:
-                result = container.exec_run('dpkg -l')
-                if result.exit_code == 0:
-                    packages = self._parse_dpkg_output(result.output.decode())
+            # Create a short-lived container but do not start a long-running process; we'll start it detached
+            tmp_name = f"infraware_tmp_{uuid.uuid4().hex[:8]}"
+            print(f"Creating temporary container {tmp_name} from image {image_name}")
+            cid_proc = _subp.run(["docker", "create", "--name", tmp_name, image_name, "sh", "-c", "sleep 3600"], capture_output=True, text=True, timeout=10)
+            if cid_proc.returncode != 0 or not cid_proc.stdout:
+                print(f"Warning: docker create failed or returned no id: {cid_proc.stderr}")
+                # As a last resort, try running commands directly with docker run --rm (may be slower)
+                dpkg_proc = _subp.run(["docker", "run", "--rm", image_name, "sh", "-c", "dpkg -l || true"], capture_output=True, text=True, timeout=12)
+                if dpkg_proc.returncode == 0 and dpkg_proc.stdout:
+                    print("Found dpkg output via docker run; parsing packages...")
+                    packages = self._parse_dpkg_output(dpkg_proc.stdout)
                     vulnerabilities.extend(self._check_package_vulnerabilities(packages))
-            except:
-                pass
-                
-            # Get package list (example for Alpine)
+                else:
+                    apk_proc = _subp.run(["docker", "run", "--rm", image_name, "sh", "-c", "apk list --installed || true"], capture_output=True, text=True, timeout=8)
+                    if apk_proc.returncode == 0 and apk_proc.stdout:
+                        print("Found apk output via docker run; parsing packages...")
+                        packages = self._parse_apk_output(apk_proc.stdout)
+                        vulnerabilities.extend(self._check_package_vulnerabilities(packages))
+                return vulnerabilities
+
+            # Get created container id
+            tmp_cid = cid_proc.stdout.strip()
+            # Start the container (detached)
+            _subp.run(["docker", "start", tmp_cid], capture_output=True, text=True, timeout=6)
+
+            # Run dpkg inside the container with a timeout
             try:
-                result = container.exec_run('apk list --installed')
-                if result.exit_code == 0:
-                    packages = self._parse_apk_output(result.output.decode())
+                print("Running dpkg -l inside temporary container...")
+                dpkg_exec = _subp.run(["docker", "exec", tmp_cid, "dpkg", "-l"], capture_output=True, text=True, timeout=15)
+                if dpkg_exec.returncode == 0 and dpkg_exec.stdout:
+                    packages = self._parse_dpkg_output(dpkg_exec.stdout)
+                    print(f"Parsed {len(packages)} dpkg packages")
                     vulnerabilities.extend(self._check_package_vulnerabilities(packages))
-            except:
-                pass
-                
+                    print(f"Detected {len(vulnerabilities)} vulnerabilities after dpkg check")
+            except _subp.TimeoutExpired:
+                print("Warning: dpkg exec timed out")
+
+            # If no vulnerabilities found yet, try apk
+            if not vulnerabilities:
+                try:
+                    print("Running apk list inside temporary container...")
+                    apk_exec = _subp.run(["docker", "exec", tmp_cid, "apk", "list", "--installed"], capture_output=True, text=True, timeout=12)
+                    if apk_exec.returncode == 0 and apk_exec.stdout:
+                        packages = self._parse_apk_output(apk_exec.stdout)
+                        print(f"Parsed {len(packages)} apk packages")
+                        vulnerabilities.extend(self._check_package_vulnerabilities(packages))
+                        print(f"Detected {len(vulnerabilities)} vulnerabilities after apk check")
+                except _subp.TimeoutExpired:
+                    print("Warning: apk exec timed out")
+
+            # If still no vulnerabilities and no packages parsed, try rpm (CentOS/RHEL)
+            if not vulnerabilities and (not packages or len(packages) == 0):
+                try:
+                    print("Running rpm -qa inside temporary container (if available)...")
+                    rpm_exec = _subp.run(["docker", "exec", tmp_cid, "rpm", "-qa"], capture_output=True, text=True, timeout=12)
+                    if rpm_exec.returncode == 0 and rpm_exec.stdout:
+                        # rpm output is a list of package-version lines; convert to a simple package dict format
+                        rpm_lines = [l.strip() for l in rpm_exec.stdout.splitlines() if l.strip()]
+                        packages = []
+                        for ln in rpm_lines:
+                            # try to split name-version
+                            if '-' in ln:
+                                parts = ln.rsplit('-', 2)
+                                if len(parts) >= 2:
+                                    name = parts[0]
+                                    ver = '-'.join(parts[1:])
+                                else:
+                                    name = ln
+                                    ver = ''
+                            else:
+                                name = ln
+                                ver = ''
+                            packages.append({'name': name, 'version': ver, 'type': 'rpm'})
+                        print(f"Parsed {len(packages)} rpm packages")
+                        vulnerabilities.extend(self._check_package_vulnerabilities(packages))
+                        print(f"Detected {len(vulnerabilities)} vulnerabilities after rpm check")
+                except _subp.TimeoutExpired:
+                    print("Warning: rpm exec timed out")
+
         except Exception as e:
             print(f"Warning: Could not extract package info: {e}")
-            
+        finally:
+            # Ensure we remove the temporary container if it was created
+            if tmp_cid:
+                try:
+                    _subp.run(["docker", "rm", "-f", tmp_cid], capture_output=True, text=True, timeout=6)
+                except Exception:
+                    pass
+
         return vulnerabilities
         
     async def _analyze_layers(self, image) -> List[Dict[str, Any]]:
@@ -335,7 +396,7 @@ class ContainerSecurityScanner:
             
         return layers
         
-    async def _scan_container_secrets(self, image) -> List[Dict[str, Any]]:
+    async def _scan_container_secrets(self, image, image_name: Optional[str] = None) -> List[Dict[str, Any]]:
         """Scan container image for secrets."""
         secrets = []
         
@@ -351,32 +412,89 @@ class ContainerSecurityScanner:
         try:
             # Extract filesystem for scanning
             with tempfile.TemporaryDirectory() as temp_dir:
-                # Export container filesystem
-                container = self.docker_client.containers.create(image)
-                
+                container = None
                 try:
-                    # Get container archive
-                    archive_data = container.get_archive('/')
+                    # create a container from the image (do not start)
+                    # Try to reuse any temporary container we created earlier (infraware_tmp_*).
+                    # This avoids creating both an SDK container and a CLI container which caused duplicates.
                     archive_path = Path(temp_dir) / 'container.tar'
-                    
-                    with open(archive_path, 'wb') as f:
-                        for chunk in archive_data[0]:
-                            f.write(chunk)
-                            
-                    # Extract and scan files
+                    try:
+                        import subprocess as _subp
+                        # Look for existing infraware_tmp_ containers (created by _scan_vulnerabilities)
+                        ps_proc = _subp.run(["docker", "ps", "-a", "--filter", "name=infraware_tmp_", "-q"], capture_output=True, text=True, timeout=4)
+                        candidate = None
+                        if ps_proc.returncode == 0 and ps_proc.stdout.strip():
+                            # Use the first matching container id
+                            candidate = ps_proc.stdout.strip().splitlines()[0]
+                            print(f"Reusing existing temporary container {candidate} for export")
+
+                        if candidate:
+                            cid = candidate
+                            with open(archive_path, 'wb') as f:
+                                exp = _subp.run(["docker", "export", cid], stdout=f, timeout=20)
+                        else:
+                            # Create a single CLI container specifically for export
+                            cid_proc = _subp.run(["docker", "create", image if isinstance(image, str) else getattr(image, 'id', image)], capture_output=True, text=True, timeout=8)
+                            if cid_proc.returncode == 0 and cid_proc.stdout:
+                                cid = cid_proc.stdout.strip()
+                                print(f"Created temporary container {cid} for export")
+                                with open(archive_path, 'wb') as f:
+                                    exp = _subp.run(["docker", "export", cid], stdout=f, timeout=20)
+                                # Remove the created container
+                                _subp.run(["docker", "rm", "-f", cid], capture_output=True)
+                            else:
+                                # Fall back to SDK get_archive if CLI create/export fails
+                                print("docker create/export failed; falling back to SDK get_archive")
+                                archive_stream, stats = container.get_archive('/')
+                                with open(archive_path, 'wb') as f:
+                                    for chunk in archive_stream:
+                                        f.write(chunk)
+                    except Exception as e:
+                        print(f"Warning: export via docker CLI failed: {e}; falling back to SDK get_archive")
+                        archive_stream, stats = container.get_archive('/')
+                        with open(archive_path, 'wb') as f:
+                            for chunk in archive_stream:
+                                f.write(chunk)
+
+                    # Extract and scan files safely (avoid absolute paths and path traversal)
                     with tarfile.open(archive_path) as tar:
-                        tar.extractall(temp_dir)
-                        
+                        def _is_within_directory(directory, target):
+                            abs_directory = Path(directory).resolve()
+                            abs_target = Path(target).resolve()
+                            try:
+                                return abs_target.is_relative_to(abs_directory)
+                            except Exception:
+                                # For Python <3.9 fallback
+                                return str(abs_target).startswith(str(abs_directory))
+
+                        for member in tar.getmembers():
+                            # sanitize member name: remove leading '/' and drive letters
+                            member_name = member.name.lstrip('/\\')
+                            # Prevent any path traversal
+                            target_path = Path(temp_dir) / member_name
+                            # Resolve the final path and ensure it's inside temp_dir
+                            try:
+                                resolved_target = target_path.resolve()
+                            except Exception:
+                                continue
+                            if not _is_within_directory(temp_dir, resolved_target):
+                                continue
+                            # Extract the member to the safe path
+                            try:
+                                tar.extract(member, path=temp_dir)
+                            except Exception:
+                                # If extraction of a specific member fails, ignore and continue
+                                continue
+
                     # Scan extracted files for secrets
                     for file_path in Path(temp_dir).rglob('*'):
                         if file_path.is_file() and file_path.stat().st_size < 10 * 1024 * 1024:  # Skip large files
                             try:
                                 with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                                     content = f.read()
-                                    
+
                                 for secret_type, pattern in secret_patterns.items():
-                                    matches = re.finditer(pattern, content)
-                                    for match in matches:
+                                    for match in re.finditer(pattern, content):
                                         secrets.append({
                                             'type': secret_type,
                                             'file_path': str(file_path.relative_to(temp_dir)),
@@ -384,12 +502,16 @@ class ContainerSecurityScanner:
                                             'severity': 'HIGH' if 'key' in secret_type else 'MEDIUM',
                                             'hash': hashlib.sha256(match.group().encode()).hexdigest()[:16]
                                         })
-                            except:
+                            except Exception:
                                 continue
-                                
+
                 finally:
-                    container.remove()
-                    
+                    if container:
+                        try:
+                            container.remove(force=True)
+                        except Exception:
+                            pass
+
         except Exception as e:
             print(f"Warning: Could not scan for secrets: {e}")
             
@@ -404,7 +526,7 @@ class ContainerSecurityScanner:
         
         return packages
         
-    async def _get_os_info(self, image) -> Dict[str, Any]:
+    async def _get_os_info(self, image, image_name: Optional[str] = None) -> Dict[str, Any]:
         """Get operating system information."""
         os_info = {
             'name': 'Unknown',
@@ -414,25 +536,29 @@ class ContainerSecurityScanner:
         
         try:
             # Try to get OS info from image config
-            config = image.attrs.get('Config', {})
-            os_info['architecture'] = image.attrs.get('Architecture', 'Unknown')
-            
-            # Try to extract OS info from container
-            container = self.docker_client.containers.run(
-                image,
-                command='cat /etc/os-release',
-                detach=True,
-                remove=True
-            )
-            
-            logs = container.logs().decode()
-            for line in logs.split('\n'):
-                if line.startswith('NAME='):
-                    os_info['name'] = line.split('=')[1].strip('"')
-                elif line.startswith('VERSION='):
-                    os_info['version'] = line.split('=')[1].strip('"')
-                    
-        except:
+            config = getattr(image, 'attrs', {})
+            os_info['architecture'] = config.get('Architecture', 'Unknown')
+
+            # Run a short command to get os-release content
+            if self.docker_client:
+                container = None
+                try:
+                    container = self.docker_client.containers.run(getattr(image, 'id', image), command='cat /etc/os-release', remove=True)
+                    # containers.run returns bytes output when not detached
+                    if isinstance(container, (bytes, bytearray)):
+                        logs = container.decode(errors='ignore')
+                    else:
+                        logs = str(container)
+
+                    for line in logs.split('\n'):
+                        if line.startswith('NAME='):
+                            os_info['name'] = line.split('=')[1].strip('"')
+                        elif line.startswith('VERSION='):
+                            os_info['version'] = line.split('=')[1].strip('"')
+                except Exception:
+                    pass
+
+        except Exception:
             pass
             
         return os_info
@@ -443,10 +569,14 @@ class ContainerSecurityScanner:
         
         # Deduct points for vulnerabilities
         for vuln in vulnerabilities:
+            # Accept either dataclass or dict-like vulnerability
             if isinstance(vuln, ContainerVulnerability):
-                severity = vuln.severity
-            else:
+                severity = getattr(vuln, 'severity', 'MEDIUM')
+            elif isinstance(vuln, dict):
                 severity = vuln.get('severity', 'MEDIUM')
+            else:
+                # Fallback: try attribute access
+                severity = getattr(vuln, 'severity', getattr(vuln, 'severity', 'MEDIUM'))
                 
             if severity == 'CRITICAL':
                 score -= 20

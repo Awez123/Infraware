@@ -1,5 +1,5 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request
+from fastapi.responses import HTMLResponse, StreamingResponse
 import json
 import tempfile
 import os
@@ -272,6 +272,96 @@ async def api_cve_action(
                     os.unlink(temp_path)
                 except Exception:
                     pass
+
+
+@app.post("/api/container-scan")
+async def api_container_scan(request: Request, image: str = Form(...), include_layers: bool = Form(True), stream: bool = Form(False)):
+    """Run container_scan_cmd programmatically and return console output or JSON result."""
+    import io
+    import contextlib
+    import asyncio as _asyncio
+    import typer as _typer
+    import subprocess as _subprocess
+
+    # Quick pre-check: is Docker available? If not, return a clear error with remediation steps.
+    try:
+        # Try a lightweight docker CLI call to check availability
+        chk = _subprocess.run(["docker", "version", "--format", "{{.Server.Version}}"], capture_output=True, text=True, timeout=3)
+        if chk.returncode != 0:
+            raise FileNotFoundError("docker CLI returned non-zero")
+    except FileNotFoundError:
+        raise HTTPException(status_code=400, detail=(
+            "Docker client not available on the server. Container scanning requires Docker or an image pull mechanism. "
+            "Install Docker Desktop / Docker Engine and ensure the server process can access the Docker daemon. "
+            "Alternatively configure a registry-accessible scan mode."
+        ))
+    except Exception:
+        raise HTTPException(status_code=400, detail=(
+            "Unable to contact Docker daemon. Ensure Docker is running and the server has permission to access it (on Windows: run Docker Desktop; on Linux: add the server user to the docker group or run with appropriate privileges)."
+        ))
+
+    def _run_scan(img: str, layers: bool):
+        # Non-streaming helper: capture and return full output
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf):
+                from infraware.commands.container_scan import container_scan_cmd
+                # call with explicit kwargs to avoid Typer OptionInfo
+                container_scan_cmd(image=img, include_layers=layers, output_format='table')
+            return {"output": buf.getvalue()}
+        except _typer.Exit as e:
+            return {"output": buf.getvalue(), "exit_code": getattr(e, 'exit_code', 0)}
+
+    def _stream_scan_process(img: str, layers: bool):
+        """Run the CLI in a subprocess and stream its stdout as SSE lines."""
+        # Run the CLI command and yield lines as they appear
+        cmd = ["infraware", "container-scan", img, "--format", "table"]
+        if not layers:
+            cmd.append('--no-layers')
+
+        env = os.environ.copy()
+        env["PYTHONUTF8"] = "1"
+        # Disable Python output buffering so prints appear as they happen
+        env["PYTHONUNBUFFERED"] = "1"
+
+        # Start subprocess with stdout pipe
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, env=env)
+
+        try:
+            # Yield SSE event for each line as it becomes available
+            if proc.stdout is None:
+                return
+            # Use readline loop to avoid blocking iterators on some platforms
+            while True:
+                line = proc.stdout.readline()
+                if line == '' and proc.poll() is not None:
+                    break
+                if line:
+                    yield f"data: {line.rstrip()}\n\n"
+
+            proc.wait()
+            yield f"event: done\ndata: exit_code={proc.returncode}\n\n"
+        finally:
+            try:
+                if proc.poll() is None:
+                    proc.kill()
+            except Exception:
+                pass
+
+    try:
+        # If the client requested streaming, return an SSE StreamingResponse
+        if stream:
+            return StreamingResponse(_stream_scan_process(image, include_layers), media_type='text/event-stream')
+
+        result = await _asyncio.to_thread(_run_scan, image, include_layers)
+        return result
+    except Exception:
+        # fallback to subprocess
+        cmd = ["infraware", "container-scan", image, "--format", "json"]
+        if not include_layers:
+            cmd.append('--no-layers')
+        res = run_infraware_command(cmd)
+        return res
 
 
 @app.get("/", response_class=HTMLResponse)
