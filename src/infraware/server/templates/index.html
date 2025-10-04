@@ -80,6 +80,12 @@
                         Cost Analysis
                     </a>
                 </li>
+                <li class="mb-4">
+                    <a id="nav-cve" href="#" class="flex items-center p-3 rounded-lg hover:bg-bg-light text-text-light">
+                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3"></path></svg>
+                        CVE
+                    </a>
+                </li>
             </ul>
         </nav>
     </aside>
@@ -163,6 +169,46 @@
                 </div>
                 <div id="error-box" class="error-box p-4 rounded-lg hidden"></div>
                 <div id="results-content" class="hidden space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- CVE Panel -->
+        <div id="cve-panel" class="hidden grid grid-cols-1 md:grid-cols-3 gap-8 mt-4">
+            <!-- Left: narrow controls (1/3) -->
+            <div class="md:col-span-1">
+                <div class="card p-6 rounded-lg mb-6">
+                    <h3 class="text-xl font-semibold mb-4">CVE Operations</h3>
+                    <p class="text-text-dark mb-4 text-sm">Manage and query the CVE vulnerability database.</p>
+                    <div class="space-y-4">
+                        <div>
+                            <button id="cve-update-button" class="btn-primary w-full py-3 rounded-lg text-lg">cve-update 📡 Update CVE database</button>
+                        </div>
+                        <div>
+                            <button id="cve-bulk-button" class="btn-primary w-full py-3 rounded-lg text-lg">cve-bulk-download 🌐 Bulk Download</button>
+                        </div>
+                        <div>
+                            <label for="cve-query" class="block text-sm font-medium text-text-light mb-1">Search CVE</label>
+                            <input id="cve-query" class="form-input w-full rounded-md" placeholder="technology or keywords">
+                            <button id="cve-search-button" class="btn-primary w-full py-3 rounded-lg text-lg mt-3">cve-search 🔍 Search</button>
+                        </div>
+                        <div>
+                            <button id="cve-stats-button" class="btn-primary w-full py-3 rounded-lg text-lg">cve-stats 📊 Stats</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: results (2/3) -->
+            <div id="cve-results-container" class="md:col-span-2">
+                <div id="cve-placeholder" class="flex items-center justify-center h-full">
+                    <div class="text-center text-text-dark">
+                        <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h4l3-7 4 14 3-7h4"></path></svg>
+                        <p class="mt-2">CVE results will be shown here.</p>
+                    </div>
+                </div>
+                <div id="cve-loader" class="hidden flex items-center justify-center h-full"><div class="loader"></div></div>
+                <div id="cve-error-box" class="error-box p-4 rounded-lg hidden"></div>
+                <div id="cve-results-content" class="hidden space-y-4"></div>
             </div>
         </div>
 
@@ -251,6 +297,9 @@
             pageTitle.textContent = 'Security Scan';
             scanPanel.classList.remove('hidden');
             costPanel.classList.add('hidden');
+            // Ensure CVE panel is hidden when switching to Scan
+            const _cvePanelHide = document.getElementById('cve-panel');
+            if (_cvePanelHide) { _cvePanelHide.classList.add('hidden'); }
             navScan.classList.add('bg-accent-cyan', 'text-gray-900');
             navCost.classList.remove('bg-accent-cyan', 'text-gray-900');
         });
@@ -261,6 +310,9 @@
             pageTitle.textContent = 'Cost Analysis';
             scanPanel.classList.add('hidden');
             costPanel.classList.remove('hidden');
+            // Ensure CVE panel is hidden when switching to Cost
+            const _cvePanelHide2 = document.getElementById('cve-panel');
+            if (_cvePanelHide2) { _cvePanelHide2.classList.add('hidden'); }
             navCost.classList.add('bg-accent-cyan', 'text-gray-900');
             navScan.classList.remove('bg-accent-cyan', 'text-gray-900');
         });
@@ -497,6 +549,217 @@
             errorBox.classList.remove('hidden');
             resultsContent.classList.add('hidden');
         }
+
+        // --- CVE Panel Logic ---
+        const navCve = document.getElementById('nav-cve');
+        const cvePanel = document.getElementById('cve-panel');
+        const cveUpdateButton = document.getElementById('cve-update-button');
+        const cveBulkButton = document.getElementById('cve-bulk-button');
+        const cveSearchButton = document.getElementById('cve-search-button');
+        const cveStatsButton = document.getElementById('cve-stats-button');
+        const cveQueryInput = document.getElementById('cve-query');
+        const cveResultsContent = document.getElementById('cve-results-content');
+        const cveErrorBox = document.getElementById('cve-error-box');
+        const cveLoader = document.getElementById('cve-loader');
+        const cvePlaceholder = document.getElementById('cve-placeholder');
+
+        navCve.addEventListener('click', (e) => {
+            e.preventDefault();
+            pageTitle.textContent = 'CVE Database';
+            scanPanel.classList.add('hidden');
+            costPanel.classList.add('hidden');
+            cvePanel.classList.remove('hidden');
+            navCve.classList.add('bg-accent-cyan', 'text-gray-900');
+            navScan.classList.remove('bg-accent-cyan', 'text-gray-900');
+            navCost.classList.remove('bg-accent-cyan', 'text-gray-900');
+        });
+
+        function showCveLoading() {
+            cvePlaceholder.classList.add('hidden');
+            cveErrorBox.classList.add('hidden');
+            cveResultsContent.classList.add('hidden');
+            cveLoader.classList.remove('hidden');
+        }
+
+        function showCveResults() {
+            cveLoader.classList.add('hidden');
+            cveResultsContent.classList.remove('hidden');
+        }
+
+        function showCveError(message) {
+            cveLoader.classList.add('hidden');
+            cvePlaceholder.classList.add('hidden');
+            cveErrorBox.textContent = `Error: ${message}`;
+            cveErrorBox.classList.remove('hidden');
+            cveResultsContent.classList.add('hidden');
+        }
+
+        function displayCveGenericResult(obj) {
+            cveResultsContent.innerHTML = '';
+            // If server returned structured search results
+            if (obj && obj.search_results) {
+                const table = document.createElement('div');
+                table.className = 'card p-4 rounded-lg overflow-auto';
+                const rows = obj.search_results;
+                const tbl = document.createElement('table');
+                tbl.className = 'w-full text-sm';
+                tbl.style.borderCollapse = 'collapse';
+
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+                    <tr class="text-left text-xs text-text-dark">
+                        <th style="padding:8px; border-bottom:1px solid #444;">CVE ID</th>
+                        <th style="padding:8px; border-bottom:1px solid #444;">Severity</th>
+                        <th style="padding:8px; border-bottom:1px solid #444;">Score</th>
+                        <th style="padding:8px; border-bottom:1px solid #444;">Description</th>
+                    </tr>`;
+                tbl.appendChild(thead);
+
+                const tbody = document.createElement('tbody');
+                rows.forEach(r => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="padding:8px; vertical-align:top; border-bottom:1px solid #333;">${r.cve_id || ''}</td>
+                        <td style="padding:8px; vertical-align:top; border-bottom:1px solid #333;">${r.severity || ''}</td>
+                        <td style="padding:8px; vertical-align:top; border-bottom:1px solid #333;">${r.cvss_score != null ? r.cvss_score : ''}</td>
+                        <td style="padding:8px; vertical-align:top; border-bottom:1px solid #333; white-space:normal;">${(r.description || '').replace(/</g, '&lt;')}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                tbl.appendChild(tbody);
+                table.appendChild(tbl);
+                cveResultsContent.appendChild(table);
+                showCveResults();
+                return;
+            }
+
+            // If server returned structured stats
+            if (obj && obj.stats) {
+                const s = obj.stats;
+                const card = document.createElement('div');
+                card.className = 'card p-4 rounded-lg';
+                card.innerHTML = `
+                    <h3 class="font-bold text-lg mb-2">CVE Database Statistics</h3>
+                    <div class="grid grid-cols-2 gap-2 text-sm mb-3">
+                        <p>Total CVEs: <strong class="text-accent-cyan">${s.total_cves || 0}</strong></p>
+                        <p>Recent (30d): <strong class="text-accent-cyan">${s.recent_cves_30_days || 0}</strong></p>
+                        <p>Database Size (MB): <strong class="text-accent-cyan">${s.database_size_mb ? s.database_size_mb.toFixed(1) : '0.0'}</strong></p>
+                        <p>Last Update: <strong class="text-accent-cyan">${s.last_update || 'Never'}</strong></p>
+                    </div>
+                `;
+                cveResultsContent.appendChild(card);
+
+                // Severity distribution table
+                if (s.severity_distribution) {
+                    const distCard = document.createElement('div');
+                    distCard.className = 'card p-4 rounded-lg overflow-auto';
+                    const tbl = document.createElement('table');
+                    tbl.className = 'w-full text-sm';
+                    tbl.innerHTML = `
+                        <thead class="text-left text-xs text-text-dark"><tr><th style="padding:8px; border-bottom:1px solid #444;">Severity</th><th style="padding:8px; border-bottom:1px solid #444;">Count</th><th style="padding:8px; border-bottom:1px solid #444;">Percentage</th></tr></thead>
+                    `;
+                    const tbody = document.createElement('tbody');
+                    const total = s.total_cves || 0;
+                    for (const [sev, cnt] of Object.entries(s.severity_distribution)) {
+                        const tr = document.createElement('tr');
+                        const perc = total > 0 ? ((cnt / total) * 100).toFixed(1) + '%' : '0.0%';
+                        tr.innerHTML = `<td style="padding:8px; vertical-align:top; border-bottom:1px solid #333;">${sev}</td><td style="padding:8px; vertical-align:top; border-bottom:1px solid #333;">${cnt}</td><td style="padding:8px; vertical-align:top; border-bottom:1px solid #333;">${perc}</td>`;
+                        tbody.appendChild(tr);
+                    }
+                    tbl.appendChild(tbody);
+                    distCard.appendChild(tbl);
+                    cveResultsContent.appendChild(distCard);
+                }
+
+                showCveResults();
+                return;
+            }
+
+            // Fallback: show raw console output or JSON
+            const card = document.createElement('div');
+            card.className = 'card p-4 rounded-lg';
+            if (obj && obj.output) {
+                card.innerHTML = `<pre style="white-space:pre-wrap; word-break:break-word;">${obj.output.replace(/</g, '&lt;')}</pre>`;
+            } else {
+                card.innerHTML = `<pre style="white-space:pre-wrap; word-break:break-word;">${JSON.stringify(obj, null, 2)}</pre>`;
+            }
+            cveResultsContent.appendChild(card);
+            showCveResults();
+        }
+
+        cveUpdateButton.addEventListener('click', async () => {
+            showCveLoading();
+            try {
+                const form = new FormData();
+                form.append('action', 'update');
+                const resp = await fetch('/api/cve', { method: 'POST', body: form });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.detail || 'Unknown error');
+                }
+                const data = await resp.json();
+                displayCveGenericResult(data);
+            } catch (err) {
+                showCveError(err.message);
+            }
+        });
+
+        cveBulkButton.addEventListener('click', async () => {
+            showCveLoading();
+            try {
+                const form = new FormData();
+                form.append('action', 'bulk-download');
+                const resp = await fetch('/api/cve', { method: 'POST', body: form });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.detail || 'Unknown error');
+                }
+                const data = await resp.json();
+                displayCveGenericResult(data);
+            } catch (err) {
+                showCveError(err.message);
+            }
+        });
+
+        cveSearchButton.addEventListener('click', async () => {
+            const q = cveQueryInput.value.trim();
+            if (!q) {
+                showCveError('Please enter search keywords or a technology name.');
+                return;
+            }
+            showCveLoading();
+            try {
+                const form = new FormData();
+                form.append('action', 'search');
+                form.append('query', q);
+                const resp = await fetch('/api/cve', { method: 'POST', body: form });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.detail || 'Unknown error');
+                }
+                const data = await resp.json();
+                displayCveGenericResult(data);
+            } catch (err) {
+                showCveError(err.message);
+            }
+        });
+
+        cveStatsButton.addEventListener('click', async () => {
+            showCveLoading();
+            try {
+                const form = new FormData();
+                form.append('action', 'stats');
+                const resp = await fetch('/api/cve', { method: 'POST', body: form });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.detail || 'Unknown error');
+                }
+                const data = await resp.json();
+                displayCveGenericResult(data);
+            } catch (err) {
+                showCveError(err.message);
+            }
+        });
     </script>
 
 </body>

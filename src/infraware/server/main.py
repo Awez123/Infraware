@@ -142,6 +142,138 @@ async def api_cost_analysis(
         return cost_results
 
 
+@app.post("/api/cve")
+async def api_cve_action(
+    action: str = Form(...),
+    data_file: UploadFile = File(None),
+    query: str = Form(None),
+    # allow optional flags
+    include_history: bool = Form(False),
+):
+    """
+    API endpoint to run CVE related actions.
+    action: one of 'update', 'bulk-download', 'search', 'stats'
+    For 'search', provide 'query' (keywords or technology).
+    For 'update' or 'bulk-download', no extra fields required; server will run the appropriate command.
+    """
+    # Prefer returning structured JSON for search/stats by calling CVEDatabase directly.
+    if action == 'search':
+        if not query:
+            raise HTTPException(status_code=400, detail="Missing 'query' for cve-search action")
+        import infraware.utils.cve_database as _cvedb_mod
+        _DB = getattr(_cvedb_mod, 'CVEDatabase')
+
+        def _search():
+            db = _DB()
+            cves = db.search_cves(query, None, 50)
+            return [cve.to_dict() for cve in cves]
+
+        import asyncio as _asyncio
+        results = await _asyncio.to_thread(_search)
+        return {"search_results": results}
+
+    if action == 'stats':
+        import infraware.utils.cve_database as _cvedb_mod
+        _DB = getattr(_cvedb_mod, 'CVEDatabase')
+
+        def _stats():
+            db = _DB()
+            return db.get_database_stats()
+
+        import asyncio as _asyncio
+        stats = await _asyncio.to_thread(_stats)
+        return {"stats": stats}
+
+    # Prefer calling command functions directly and capture their console output.
+    import io
+    import sys
+    import contextlib
+    import typer as _typer
+
+    if action not in ("update", "bulk-download", "search", "stats"):
+        raise HTTPException(status_code=400, detail=f"Unknown action: {action}")
+
+    # Run the potentially-blocking command functions in a background thread
+    import asyncio as _asyncio
+
+    def _run_sync_action(act: str, qry: str):
+        # This function runs on a worker thread and may call asyncio.run() safely.
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf):
+                if act == 'bulk-download':
+                    original_confirm = _typer.confirm
+                    try:
+                        _typer.confirm = lambda *a, **k: True
+                        from infraware.commands.cve_bulk_download import cve_bulk_download_cmd
+                        cve_bulk_download_cmd()
+                    finally:
+                        _typer.confirm = original_confirm
+
+                elif act == 'update':
+                    from infraware.commands.cve_update import cve_update_cmd
+                    cve_update_cmd()
+
+                elif act == 'search':
+                    from infraware.commands.cve_search import cve_search_cmd
+                    if not qry:
+                        # Raise a plain ValueError in the thread to be caught by the caller
+                        raise ValueError("Missing 'query' for cve-search action")
+                    # Call programmatically with explicit keyword args to avoid Typer OptionInfo defaults
+                    cve_search_cmd(query=qry, severity=None, limit=10, output_format='table')
+
+                elif act == 'stats':
+                    from infraware.commands.cve_stats import cve_stats_cmd
+                    cve_stats_cmd()
+
+            return {"output": buf.getvalue()}
+
+        except _typer.Exit as ex:
+            return {"output": buf.getvalue(), "exit_code": getattr(ex, 'exit_code', 0)}
+
+    try:
+        result = await _asyncio.to_thread(_run_sync_action, action, query)
+        # If thread returned a dict (output or exit code), just return it
+        if isinstance(result, dict):
+            return result
+        # Otherwise, wrap as output
+        return {"output": str(result)}
+
+    except Exception:
+        # Fall back to CLI subprocess if direct call fails or is inappropriate
+        temp_path = None
+        try:
+            cmd = ["infraware"]
+            if action == 'update':
+                cmd.append('cve-update')
+            elif action == 'bulk-download':
+                cmd.append('cve-bulk-download')
+                if include_history:
+                    cmd.append('--history')
+            elif action == 'search':
+                cmd.extend(['cve-search'])
+                if query:
+                    cmd.append(query)
+            elif action == 'stats':
+                cmd.append('cve-stats')
+
+            if data_file:
+                with tempfile.NamedTemporaryFile(delete=False, mode='wb') as tf:
+                    tf.write(await data_file.read())
+                    temp_path = tf.name
+                cmd.append(temp_path)
+
+            # Run CLI and capture output JSON or text
+            result = run_infraware_command(cmd)
+            return result
+        finally:
+            if temp_path:
+                try:
+                    os.unlink(temp_path)
+                except Exception:
+                    pass
+
+
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
     """
