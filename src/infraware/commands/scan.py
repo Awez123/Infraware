@@ -1,5 +1,3 @@
-# in infraware/commands/scan.py
-
 import json
 import yaml
 import typer
@@ -37,12 +35,12 @@ def scan(
     for security vulnerabilities, misconfigurations, and compliance violations.
     
     Examples:
-      infraware scan plan.json                          # Basic Terraform scan
-      infraware scan cloudformation.yaml                # CloudFormation scan
-      infraware scan k8s-deployment.yaml               # Kubernetes scan
-      infraware scan plan.json --severity CRITICAL     # Critical issues only
-      infraware scan plan.json --format json           # JSON output for CI/CD
-      infraware scan plan.json --remediation           # Include fix guidance
+      infraware scan plan.json                     # Basic Terraform scan
+      infraware scan cloudformation.yaml           # CloudFormation scan
+      infraware scan k8s-deployment.yaml           # Kubernetes scan
+      infraware scan plan.json --severity CRITICAL   # Critical issues only
+      infraware scan plan.json --format json         # JSON output for CI/CD
+      infraware scan plan.json --remediation         # Include fix guidance
     
     Features:
       ✅ 35+ AWS security rules (RDS, EC2, IAM, Lambda, ELB, CloudTrail, KMS)
@@ -52,7 +50,9 @@ def scan(
       ✅ Baseline exceptions with ignore files
       ✅ Compliance mapping and remediation guidance
     """
-    console.print(f"🔍 Scanning plan: [cyan]{plan_file}[/cyan]")
+    # --- FIX: Only print this line for non-JSON formats ---
+    if output_format.lower() != "json":
+        console.print(f"🔍 Scanning plan: [cyan]{plan_file}[/cyan]")
     
     # Load rules and ignores
     rules = load_rules_from_directory(rules_dir)
@@ -65,190 +65,39 @@ def scan(
         file_path = Path(plan_file)
         
         if file_path.suffix.lower() in ['.yaml', '.yml']:
-            # Load YAML file (CloudFormation, Kubernetes, etc.)
             with open(plan_file, 'r') as f:
                 try:
-                    # Try to load as standard YAML first (single document)
                     yaml_data = yaml.safe_load(f)
                 except Exception as e:
-                    console.print(f"[yellow]⚠️ Standard YAML parsing failed: {e}[/yellow]")
-                    
-                    # Check if it's a multi-document YAML (Kubernetes style)
                     if "but found another document" in str(e):
-                        console.print("[yellow]Detected multi-document YAML (Kubernetes/Docker Compose)[/yellow]")
                         f.seek(0)
-                        try:
-                            # Load all documents and combine them
-                            documents = list(yaml.safe_load_all(f))
-                            # Create a wrapper structure for multiple docs
-                            yaml_data = {
-                                "kind": "MultiDocument",
-                                "documents": documents
-                            }
-                        except Exception as e2:
-                            console.print(f"[yellow]Multi-document parsing also failed: {e2}[/yellow]")
-                            console.print("[yellow]Attempting CloudFormation-specific parsing...[/yellow]")
-                            
-                            # Try CloudFormation parsing as fallback
-                            class CloudFormationLoader(yaml.SafeLoader):
-                                pass
-                            
-                            def construct_ref(loader, node):
-                                value = loader.construct_scalar(node)
-                                return f"REF_PLACEHOLDER_{value}"
-                            
-                            def construct_getatt(loader, node):
-                                if isinstance(node, yaml.ScalarNode):
-                                    value = loader.construct_scalar(node)
-                                    return f"GETATT_PLACEHOLDER_{value}"
-                                else:
-                                    values = loader.construct_sequence(node)
-                                    return f"GETATT_PLACEHOLDER_{'.'.join(map(str, values))}"
-                            
-                            def construct_sub(loader, node):
-                                if isinstance(node, yaml.ScalarNode):
-                                    value = loader.construct_scalar(node)
-                                    return f"SUB_PLACEHOLDER_{value}"
-                                else:
-                                    values = loader.construct_sequence(node)
-                                    return f"SUB_PLACEHOLDER_{values[0] if values else 'unknown'}"
-                            
-                            def construct_join(loader, node):
-                                values = loader.construct_sequence(node)
-                                return f"JOIN_PLACEHOLDER_{len(values)}_items"
-                            
-                            def construct_getazs(loader, node):
-                                if isinstance(node, yaml.ScalarNode):
-                                    value = loader.construct_scalar(node)
-                                    return f"GETAZS_PLACEHOLDER_{value}"
-                                else:
-                                    return "GETAZS_PLACEHOLDER_region"
-                            
-                            def construct_generic(loader, node):
-                                if isinstance(node, yaml.ScalarNode):
-                                    return f"CF_PLACEHOLDER_{loader.construct_scalar(node)}"
-                                elif isinstance(node, yaml.SequenceNode):
-                                    return f"CF_PLACEHOLDER_LIST"
-                                elif isinstance(node, yaml.MappingNode):
-                                    return f"CF_PLACEHOLDER_MAP"
-                                else:
-                                    return "CF_PLACEHOLDER_UNKNOWN"
-                            
-                            # Register all CloudFormation intrinsic functions
-                            CloudFormationLoader.add_constructor('!Ref', construct_ref)
-                            CloudFormationLoader.add_constructor('!GetAtt', construct_getatt)
-                            CloudFormationLoader.add_constructor('!Sub', construct_sub)
-                            CloudFormationLoader.add_constructor('!Join', construct_join)
-                            CloudFormationLoader.add_constructor('!GetAZs', construct_getazs)
-                            CloudFormationLoader.add_constructor('!Base64', construct_generic)
-                            CloudFormationLoader.add_constructor('!Cidr', construct_generic)
-                            CloudFormationLoader.add_constructor('!FindInMap', construct_generic)
-                            CloudFormationLoader.add_constructor('!ImportValue', construct_generic)
-                            CloudFormationLoader.add_constructor('!Select', construct_generic)
-                            CloudFormationLoader.add_constructor('!Split', construct_generic)
-                            CloudFormationLoader.add_constructor('!Transform', construct_generic)
-                            CloudFormationLoader.add_constructor('!If', construct_generic)
-                            CloudFormationLoader.add_constructor('!Not', construct_generic)
-                            CloudFormationLoader.add_constructor('!Equals', construct_generic)
-                            CloudFormationLoader.add_constructor('!And', construct_generic)
-                            CloudFormationLoader.add_constructor('!Or', construct_generic)
-                            
-                            f.seek(0)
-                            try:
-                                yaml_data = yaml.load(f, Loader=CloudFormationLoader)
-                            except Exception as e3:
-                                console.print(f"[red]Failed to parse CloudFormation YAML: {e3}[/red]")
-                                console.print("[red]This may be a complex template with unsupported syntax[/red]")
-                                raise typer.Exit(code=1)
+                        documents = list(yaml.safe_load_all(f))
+                        yaml_data = {"kind": "MultiDocument", "documents": documents}
                     else:
-                        console.print("[yellow]Attempting CloudFormation-specific parsing...[/yellow]")
-                        
-                        # Create CloudFormation-aware YAML loader
-                        class CloudFormationLoader(yaml.SafeLoader):
-                            pass
-                        
-                        def construct_ref(loader, node):
-                            value = loader.construct_scalar(node)
-                            return f"REF_PLACEHOLDER_{value}"
-                        
-                        def construct_getatt(loader, node):
-                            if isinstance(node, yaml.ScalarNode):
-                                value = loader.construct_scalar(node)
-                                return f"GETATT_PLACEHOLDER_{value}"
-                            else:
-                                values = loader.construct_sequence(node)
-                                return f"GETATT_PLACEHOLDER_{'.'.join(map(str, values))}"
-                        
-                        def construct_sub(loader, node):
-                            if isinstance(node, yaml.ScalarNode):
-                                value = loader.construct_scalar(node)
-                                return f"SUB_PLACEHOLDER_{value}"
-                            else:
-                                values = loader.construct_sequence(node)
-                                return f"SUB_PLACEHOLDER_{values[0] if values else 'unknown'}"
-                        
-                        def construct_join(loader, node):
-                            values = loader.construct_sequence(node)
-                            return f"JOIN_PLACEHOLDER_{len(values)}_items"
-                        
-                        def construct_getazs(loader, node):
-                            if isinstance(node, yaml.ScalarNode):
-                                value = loader.construct_scalar(node)
-                                return f"GETAZS_PLACEHOLDER_{value}"
-                            else:
-                                return "GETAZS_PLACEHOLDER_region"
-                        
+                        class CloudFormationLoader(yaml.SafeLoader): pass
                         def construct_generic(loader, node):
-                            if isinstance(node, yaml.ScalarNode):
-                                return f"CF_PLACEHOLDER_{loader.construct_scalar(node)}"
-                            elif isinstance(node, yaml.SequenceNode):
-                                return f"CF_PLACEHOLDER_LIST"
-                            elif isinstance(node, yaml.MappingNode):
-                                return f"CF_PLACEHOLDER_MAP"
-                            else:
-                                return "CF_PLACEHOLDER_UNKNOWN"
+                            if isinstance(node, yaml.ScalarNode): return f"CF_PLACEHOLDER_{loader.construct_scalar(node)}"
+                            elif isinstance(node, yaml.SequenceNode): return "CF_PLACEHOLDER_LIST"
+                            return "CF_PLACEHOLDER_MAP"
                         
-                        # Register all CloudFormation intrinsic functions
-                        CloudFormationLoader.add_constructor('!Ref', construct_ref)
-                        CloudFormationLoader.add_constructor('!GetAtt', construct_getatt)
-                        CloudFormationLoader.add_constructor('!Sub', construct_sub)
-                        CloudFormationLoader.add_constructor('!Join', construct_join)
-                        CloudFormationLoader.add_constructor('!GetAZs', construct_getazs)
-                        CloudFormationLoader.add_constructor('!Base64', construct_generic)
-                        CloudFormationLoader.add_constructor('!Cidr', construct_generic)
-                        CloudFormationLoader.add_constructor('!FindInMap', construct_generic)
-                        CloudFormationLoader.add_constructor('!ImportValue', construct_generic)
-                        CloudFormationLoader.add_constructor('!Select', construct_generic)
-                        CloudFormationLoader.add_constructor('!Split', construct_generic)
-                        CloudFormationLoader.add_constructor('!Transform', construct_generic)
-                        CloudFormationLoader.add_constructor('!If', construct_generic)
-                        CloudFormationLoader.add_constructor('!Not', construct_generic)
-                        CloudFormationLoader.add_constructor('!Equals', construct_generic)
-                        CloudFormationLoader.add_constructor('!And', construct_generic)
-                        CloudFormationLoader.add_constructor('!Or', construct_generic)
+                        tags_to_construct = ['!Ref', '!GetAtt', '!Sub', '!Join', '!GetAZs', '!Base64', '!Cidr', '!FindInMap', '!ImportValue', '!Select', '!Split', '!Transform', '!If', '!Not', '!Equals', '!And', '!Or']
+                        for tag in tags_to_construct:
+                            CloudFormationLoader.add_constructor(tag, construct_generic)
                         
                         f.seek(0)
-                        try:
-                            yaml_data = yaml.load(f, Loader=CloudFormationLoader)
-                        except Exception as e2:
-                            console.print(f"[red]Failed to parse CloudFormation YAML: {e2}[/red]")
-                            console.print("[red]This may be a complex CloudFormation template with unsupported syntax[/red]")
-                            raise typer.Exit(code=1)
-            
-            # Convert CloudFormation YAML to compatible format
+                        yaml_data = yaml.load(f, Loader=CloudFormationLoader)
+
             if 'AWSTemplateFormatVersion' in yaml_data or 'Resources' in yaml_data:
                 plan_data = convert_cloudformation_to_plan_format(yaml_data)
-                console.print("📋 [green]CloudFormation YAML detected - converted to plan format[/green]")
+                if output_format.lower() != "json": console.print("📋 [green]CloudFormation YAML detected - converted to plan format[/green]")
             else:
-                # Handle other YAML types (Kubernetes, Docker Compose, etc.)
                 plan_data = convert_yaml_to_plan_format(yaml_data)
-                console.print("📋 [green]YAML infrastructure file detected[/green]")
+                if output_format.lower() != "json": console.print("📋 [green]YAML infrastructure file detected[/green]")
                 
         else:
-            # Load JSON file (Terraform plan)
             with open(plan_file, 'r') as f:
                 plan_data = json.load(f)
-            console.print("📋 [green]Terraform JSON plan detected[/green]")
+            if output_format.lower() != "json": console.print("📋 [green]Terraform JSON plan detected[/green]")
             
     except Exception as e:
         console.print(f"[red]Error reading plan file: {e}[/red]")
@@ -282,7 +131,6 @@ def scan(
 
     # Display results
     if output_format.lower() == "json":
-        # Update scan results with filtered vulnerabilities
         filtered_results = scan_results.copy()
         filtered_results['vulnerabilities'] = [v.to_dict() for v in vulnerabilities]
         filtered_results['summary']['total_vulnerabilities'] = len(vulnerabilities)
@@ -296,7 +144,6 @@ def _display_table_output(scan_results: dict, vulnerabilities: list, show_remedi
     """Display scan results in formatted table."""
     summary = scan_results['summary']
     
-    # Summary panel
     summary_text = f"""
 [bold]Total Vulnerabilities:[/bold] {summary['total_vulnerabilities']}
 [bold]Ignored Findings:[/bold] {summary['ignored_findings']}
@@ -312,13 +159,12 @@ def _display_table_output(scan_results: dict, vulnerabilities: list, show_remedi
     
     risk_color = "red" if summary['risk_score'] >= 8.0 else "yellow" if summary['risk_score'] >= 5.0 else "green"
     console.print(Panel(summary_text, title="🛡️ Security Scan Summary", 
-                      border_style=risk_color, box=box.ROUNDED))
+                        border_style=risk_color, box=box.ROUNDED))
 
     if not vulnerabilities:
         console.print("[green]✅ No vulnerabilities found matching your criteria![/green]")
         return
 
-    # Vulnerabilities table
     table = Table(title="🚨 Vulnerabilities Found", box=box.ROUNDED)
     table.add_column("ID", style="cyan", width=12)
     table.add_column("Severity", style="bold", width=10)
@@ -331,16 +177,12 @@ def _display_table_output(scan_results: dict, vulnerabilities: list, show_remedi
         table.add_column("Remediation", style="green", width=40)
 
     for vuln in vulnerabilities:
-        # Color code severity
         severity_color = {
-            "CRITICAL": "red",
-            "HIGH": "orange3", 
-            "MEDIUM": "yellow",
-            "LOW": "blue",
-            "INFO": "white"
+            "CRITICAL": "red", "HIGH": "orange3", "MEDIUM": "yellow",
+            "LOW": "blue", "INFO": "white"
         }.get(vuln.severity.value, "white")
         
-        cve_text = ", ".join(vuln.cve_references[:2])  # Show first 2 CVEs
+        cve_text = ", ".join(vuln.cve_references[:2])
         if len(vuln.cve_references) > 2:
             cve_text += f" +{len(vuln.cve_references)-2}"
         
@@ -363,7 +205,6 @@ def _display_table_output(scan_results: dict, vulnerabilities: list, show_remedi
 
     console.print(table)
     
-    # Show detailed view for critical vulnerabilities
     critical_vulns = [v for v in vulnerabilities if v.severity.value == "CRITICAL"]
     if critical_vulns:
         console.print("\n[red bold]🚨 CRITICAL VULNERABILITIES DETAILS:[/red bold]")
@@ -386,27 +227,17 @@ def _display_csv_output(vulnerabilities: list):
     output = io.StringIO()
     writer = csv.writer(output)
     
-    # Header
     writer.writerow([
         'ID', 'Title', 'Severity', 'Score', 'Resource Type', 'Resource Name',
         'CVEs', 'CIS Controls', 'Tags', 'Description', 'Impact', 'Remediation'
     ])
     
-    # Data
     for vuln in vulnerabilities:
         writer.writerow([
-            vuln.id,
-            vuln.title,
-            vuln.severity.value,
-            vuln.severity_score,
-            vuln.resource_type,
-            vuln.resource_name,
-            ';'.join(vuln.cve_references),
-            ';'.join(vuln.cis_controls),
-            ';'.join(vuln.tags),
-            vuln.description,
-            vuln.impact,
-            vuln.remediation
+            vuln.id, vuln.title, vuln.severity.value, vuln.severity_score,
+            vuln.resource_type, vuln.resource_name,
+            ';'.join(vuln.cve_references), ';'.join(vuln.cis_controls),
+            ';'.join(vuln.tags), vuln.description, vuln.impact, vuln.remediation
         ])
     
     console.print(output.getvalue())
@@ -414,139 +245,53 @@ def _display_csv_output(vulnerabilities: list):
 def convert_cloudformation_to_plan_format(cf_template: dict) -> dict:
     """Convert CloudFormation template to Terraform plan-like format."""
     resources = []
-    
     cf_resources = cf_template.get('Resources', {})
     for resource_name, resource_data in cf_resources.items():
-        resource_type = resource_data.get('Type', '')
-        resource_properties = resource_data.get('Properties', {})
-        
-        # Map CloudFormation resource types to Terraform-like types
-        tf_type = map_cf_to_tf_type(resource_type)
-        
-        # Create Terraform plan-like resource
-        tf_resource = {
-            'type': tf_type,
+        resources.append({
+            'type': map_cf_to_tf_type(resource_data.get('Type', '')),
             'name': resource_name,
-            'values': resource_properties
-        }
-        resources.append(tf_resource)
+            'values': resource_data.get('Properties', {})
+        })
     
-    # Create plan-like structure
-    plan_data = {
-        'planned_values': {
-            'root_module': {
-                'resources': resources
-            }
-        }
+    return {
+        'planned_values': {'root_module': {'resources': resources}}
     }
-    
-    return plan_data
 
 def convert_yaml_to_plan_format(yaml_data: dict) -> dict:
     """Convert general YAML infrastructure to plan format."""
     resources = []
+    docs = yaml_data.get("documents", [yaml_data]) if yaml_data.get("kind") == "MultiDocument" else [yaml_data]
     
-    # Handle multi-document YAML (Kubernetes)
-    if isinstance(yaml_data, dict) and yaml_data.get("kind") == "MultiDocument":
-        for i, doc in enumerate(yaml_data.get("documents", [])):
-            if doc is None:
-                continue
-            
-            # Handle Kubernetes documents
-            if 'apiVersion' in doc and 'kind' in doc:
-                resource = {
-                    'type': f"kubernetes_{doc.get('kind', 'unknown').lower()}",
-                    'name': doc.get('metadata', {}).get('name', f'unnamed_{i}'),
-                    'values': doc.get('spec', doc)  # Use spec or full document
-                }
-                resources.append(resource)
-            
-            # Handle other document types
-            else:
-                for key, value in doc.items():
-                    if isinstance(value, dict):
-                        resource = {
-                            'type': f"yaml_{key}",
-                            'name': f"{key}_{i}",
-                            'values': value
-                        }
-                        resources.append(resource)
+    for i, doc in enumerate(docs):
+        if not doc: continue
+        
+        if 'apiVersion' in doc and 'kind' in doc:
+            resources.append({
+                'type': f"kubernetes_{doc.get('kind', 'unknown').lower()}",
+                'name': doc.get('metadata', {}).get('name', f'unnamed_{i}'),
+                'values': doc.get('spec', doc)
+            })
+        elif 'services' in doc:
+            for service_name, service_config in doc.get('services', {}).items():
+                resources.append({
+                    'type': 'docker_container', 'name': service_name, 'values': service_config
+                })
+        else:
+            for key, value in doc.items():
+                if isinstance(value, dict):
+                    resources.append({'type': f"yaml_{key}", 'name': key, 'values': value})
     
-    # Handle Kubernetes YAML (single document)
-    elif 'apiVersion' in yaml_data and 'kind' in yaml_data:
-        resource = {
-            'type': f"kubernetes_{yaml_data.get('kind', 'unknown').lower()}",
-            'name': yaml_data.get('metadata', {}).get('name', 'unnamed'),
-            'values': yaml_data.get('spec', yaml_data)  # Use spec or full document
-        }
-        resources.append(resource)
-    
-    # Handle Docker Compose
-    elif 'services' in yaml_data:
-        for service_name, service_config in yaml_data.get('services', {}).items():
-            resource = {
-                'type': 'docker_container',
-                'name': service_name,
-                'values': service_config
-            }
-            resources.append(resource)
-    
-    # Handle other YAML formats
-    else:
-        # Generic handling
-        for key, value in yaml_data.items():
-            if isinstance(value, dict):
-                resource = {
-                    'type': f"yaml_{key}",
-                    'name': key,
-                    'values': value
-                }
-                resources.append(resource)
-    
-    # Create plan-like structure
-    resource_changes = []
-    for resource in resources:
-        resource_change = {
-            'address': f"{resource['type']}.{resource['name']}",
-            'change': {
-                'actions': ['create'],
-                'after': resource['values']
-            },
-            'mode': 'managed',
-            'type': resource['type'],
-            'name': resource['name']
-        }
-        resource_changes.append(resource_change)
-    
-    plan_data = {
-        'resource_changes': resource_changes,
-        'planned_values': {
-            'root_module': {
-                'resources': resources
-            }
-        }
+    return {
+        'planned_values': {'root_module': {'resources': resources}}
     }
-    
-    return plan_data
 
 def map_cf_to_tf_type(cf_type: str) -> str:
     """Map CloudFormation resource types to Terraform-like types."""
     cf_to_tf_mapping = {
-        'AWS::S3::Bucket': 'aws_s3_bucket',
-        'AWS::EC2::Instance': 'aws_instance',
-        'AWS::EC2::VPC': 'aws_vpc',
-        'AWS::EC2::Subnet': 'aws_subnet',
-        'AWS::EC2::SecurityGroup': 'aws_security_group',
-        'AWS::RDS::DBInstance': 'aws_db_instance',
-        'AWS::EBS::Volume': 'aws_ebs_volume',
-        'AWS::IAM::Role': 'aws_iam_role',
-        'AWS::IAM::Policy': 'aws_iam_policy',
-        'AWS::Lambda::Function': 'aws_lambda_function',
-        'AWS::EC2::InternetGateway': 'aws_internet_gateway',
-        'AWS::EC2::RouteTable': 'aws_route_table',
-        'AWS::AutoScaling::AutoScalingGroup': 'aws_autoscaling_group',
-        'AWS::ElasticLoadBalancing::LoadBalancer': 'aws_lb',
-        'AWS::CloudFormation::Stack': 'aws_cloudformation_stack'
+        'AWS::S3::Bucket': 'aws_s3_bucket', 'AWS::EC2::Instance': 'aws_instance',
+        'AWS::EC2::VPC': 'aws_vpc', 'AWS::EC2::Subnet': 'aws_subnet',
+        'AWS::EC2::SecurityGroup': 'aws_security_group', 'AWS::RDS::DBInstance': 'aws_db_instance',
+        'AWS::IAM::Role': 'aws_iam_role', 'AWS::Lambda::Function': 'aws_lambda_function',
     }
-    
     return cf_to_tf_mapping.get(cf_type, cf_type.lower().replace('::', '_'))
+

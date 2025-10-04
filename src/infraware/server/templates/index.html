@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfraWare Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-dark: #1a1a1a;
+            --bg-medium: #2c2c2c;
+            --bg-light: #3a3a3a;
+            --accent-cyan: #00e5ff;
+            --text-light: #e0e0e0;
+            --text-dark: #b0b0b0;
+            --border-color: #444;
+            --sidebar-width: 72px;
+            --sidebar-bg: linear-gradient(180deg, #232323, #1e1e1e);
+            --sidebar-active-bg: rgba(0,229,255,0.12);
+        }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Inter', sans-serif;
+        }
+        .sidebar {
+            background: var(--sidebar-bg);
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            border-right: 1px solid rgba(255,255,255,0.03);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+            padding-top: 28px;
+        }
+        .main-content { background-color: var(--bg-dark); }
+    .card { background-color: var(--bg-medium); border: 1px solid var(--border-color); }
+        .btn-primary { background-color: var(--accent-cyan); color: var(--bg-dark); font-weight: bold; transition: background-color 0.3s; }
+        .btn-primary:hover { background-color: #00b8d4; }
+        .file-input-label { background-color: var(--bg-light); border: 2px dashed var(--border-color); }
+        .file-input-label:hover { border-color: var(--accent-cyan); }
+        .error-box { background-color: #4d1f1f; border: 1px solid #993d3d; color: #ffcccc; }
+        .result-card { background-color: var(--bg-medium); }
+        .severity-critical { color: #ff5555; }
+        .severity-high { color: #ffaa55; }
+        .severity-medium { color: #ffff55; }
+        .severity-low { color: #55aaff; }
+        .severity-info { color: #aaaaaa; }
+        .form-input, .form-select {
+            background-color: var(--bg-light);
+            border: 1px solid var(--border-color);
+            color: var(--text-light);
+        }
+        .form-checkbox {
+            accent-color: var(--accent-cyan);
+        }
+        /* Modern sidebar nav */
+        .sidebar .brand {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .sidebar .brand .logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg,#00e5ff,#00b8d4 60%);
+            display:flex;align-items:center;justify-content:center;font-weight:700;color:#07232a;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+        }
+        .sidebar nav ul { display:flex; flex-direction:column; gap:10px; align-items:center; padding:0; }
+        .sidebar nav a {
+            width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:10px; color:var(--text-light);
+            transition: all 180ms ease; text-decoration:none; border:1px solid transparent;
+        }
+        .sidebar nav a:hover { transform: translateY(-2px); background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.03); }
+        .sidebar nav a.active, .sidebar nav a.bg-accent-cyan { background: var(--sidebar-active-bg); border-color: rgba(0,229,255,0.14); color: #eaffff; }
+        .sidebar nav svg { width:20px; height:20px; }
+        /* keep text items inside larger panels for labels */
+        .sidebar .label-hidden { display: none; }
+        .loader {
+            border: 4px solid var(--bg-light);
+            border-top: 4px solid var(--accent-cyan);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="flex h-screen">
+
+    <!-- Sidebar -->
+    <aside class="sidebar flex flex-col items-center">
+        <div class="brand">
+            <div class="logo">IW</div>
+            <div class="label-hidden">InfraWare</div>
+        </div>
+        <nav>
+            <ul>
+                <li>
+                    <a id="nav-scan" href="#" class="active" title="Scan File">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2zM9 22V12h6v10"></path></svg>
+                    </a>
+                </li>
+                <li>
+                    <a id="nav-cost" href="#" title="Cost Analysis">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V4m0 16v-4"></path></svg>
+                    </a>
+                </li>
+                <li>
+                    <a id="nav-cve" href="#" title="CVE Database">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3"></path></svg>
+                    </a>
+                </li>
+                <li>
+                    <a id="nav-container" href="#" title="Container Scan">
+                        <!-- simple container / docker icon -->
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18v4H3V7zm0 6h18v4H3v-4zM7 3h10v2H7V3z"></path></svg>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content flex-1 p-8 overflow-y-auto">
+        <h2 id="page-title" class="text-3xl font-bold mb-6">Security Scan</h2>
+
+    <div id="scan-panel" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Left Column: Inputs -->
+            <div>
+                <!-- Plan File Upload -->
+                <div class="card p-6 rounded-lg mb-8">
+                    <h3 class="text-xl font-semibold mb-4">Upload Terraform Plan</h3>
+                    <p class="text-text-dark mb-4 text-sm">Select your `tfplan.json` file to begin a security scan.</p>
+                    <label for="plan-file" class="file-input-label flex justify-center items-center w-full h-24 rounded-lg cursor-pointer">
+                        <div class="text-center">
+                            <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-4-4V7a4 4 0 014-4h5l4 4v11a2 2 0 01-2 2H9a2 2 0 01-2-2v-1z"></path></svg>
+                            <p class="mt-1 text-sm text-gray-400"><span id="plan-file-name">Choose File</span></p>
+                        </div>
+                    </label>
+                    <input type="file" id="plan-file" class="hidden" accept=".json">
+                </div>
+
+                <!-- Custom Rules Upload -->
+                <div class="card p-6 rounded-lg mb-8">
+                    <h3 class="text-xl font-semibold mb-4">Upload Custom Rules (Optional)</h3>
+                     <p class="text-text-dark mb-4 text-sm">Provide a `.yaml` file containing your custom rules.</p>
+                    <label for="rules-file" class="file-input-label flex justify-center items-center w-full h-24 rounded-lg cursor-pointer">
+                        <div class="text-center">
+                            <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            <p class="mt-1 text-sm text-gray-400"><span id="rules-file-name">Choose Rules File</span></p>
+                        </div>
+                    </label>
+                    <input type="file" id="rules-file" class="hidden" accept=".yaml,.yml">
+                </div>
+
+                <!-- Advanced Options -->
+                <div class="card p-6 rounded-lg mb-8">
+                    <h3 class="text-xl font-semibold mb-4">Advanced Scan Options</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="severity-filter" class="block text-sm font-medium text-text-light mb-1">Filter by Severity</label>
+                            <select id="severity-filter" class="form-select w-full rounded-md">
+                                <option value="">All Severities</option>
+                                <option value="CRITICAL">Critical</option>
+                                <option value="HIGH">High</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="LOW">Low</option>
+                                <option value="INFO">Info</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="cve-filter" class="block text-sm font-medium text-text-light mb-1">Filter by CVE ID</label>
+                            <input type="text" id="cve-filter" class="form-input w-full rounded-md" placeholder="e.g., CVE-2021-44228">
+                        </div>
+                        <div>
+                            <label for="tags-filter" class="block text-sm font-medium text-text-light mb-1">Filter by Tags (comma-separated)</label>
+                            <input type="text" id="tags-filter" class="form-input w-full rounded-md" placeholder="e.g., encryption,data-protection">
+                        </div>
+                        <div class="flex items-center">
+                            <input id="show-remediation" type="checkbox" class="form-checkbox h-4 w-4 rounded">
+                            <label for="show-remediation" class="ml-2 block text-sm text-text-light">Show Remediation Steps</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="scan-button" class="btn-primary w-full py-3 rounded-lg text-lg">Scan Now</button>
+            </div>
+
+            <!-- Right Column: Results -->
+            <div id="results-container">
+                <div class="flex items-center justify-center h-full" id="placeholder">
+                    <div class="text-center text-text-dark">
+                        <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <p class="mt-2">Scan results will be displayed here.</p>
+                    </div>
+                </div>
+                <div id="loader" class="hidden flex items-center justify-center h-full">
+                    <div class="loader"></div>
+                </div>
+                <div id="error-box" class="error-box p-4 rounded-lg hidden"></div>
+                <div id="results-content" class="hidden space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- CVE Panel -->
+        <div id="cve-panel" class="hidden grid grid-cols-1 md:grid-cols-3 gap-8 mt-4">
+            <!-- Left: narrow controls (1/3) -->
+            <div class="md:col-span-1">
+                <div class="card p-6 rounded-lg mb-6">
+                    <h3 class="text-xl font-semibold mb-4">CVE Operations</h3>
+                    <p class="text-text-dark mb-4 text-sm">Manage and query the CVE vulnerability database.</p>
+                    <div class="space-y-4">
+                        <div>
+                            <button id="cve-update-button" class="btn-primary w-full py-3 rounded-lg text-lg">cve-update 📡 Update CVE database</button>
+                        </div>
+                        <div>
+                            <button id="cve-bulk-button" class="btn-primary w-full py-3 rounded-lg text-lg">cve-bulk-download 🌐 Bulk Download</button>
+                        </div>
+                        <div>
+                            <label for="cve-query" class="block text-sm font-medium text-text-light mb-1">Search CVE</label>
+                            <input id="cve-query" class="form-input w-full rounded-md" placeholder="technology or keywords">
+                            <button id="cve-search-button" class="btn-primary w-full py-3 rounded-lg text-lg mt-3">cve-search 🔍 Search</button>
+                        </div>
+                        <div>
+                            <button id="cve-stats-button" class="btn-primary w-full py-3 rounded-lg text-lg">cve-stats 📊 Stats</button>
+                        </div>
+                        <!-- container controls moved to their own panel -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: results (2/3) -->
+            <div id="cve-results-container" class="md:col-span-2">
+                <div id="cve-placeholder" class="flex items-center justify-center h-full">
+                    <div class="text-center text-text-dark">
+                        <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h4l3-7 4 14 3-7h4"></path></svg>
+                        <p class="mt-2">CVE results will be shown here.</p>
+                    </div>
+                </div>
+                <div id="cve-loader" class="hidden flex items-center justify-center h-full"><div class="loader"></div></div>
+                <div id="cve-error-box" class="error-box p-4 rounded-lg hidden"></div>
+                <div id="cve-results-content" class="hidden space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- Cost Analysis Panel (sibling to scan-panel) -->
+        <div id="cost-panel" class="hidden grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+            <div>
+                <div class="card p-6 rounded-lg mb-6">
+                    <h3 class="text-xl font-semibold mb-4">Upload Infrastructure Plan</h3>
+                    <p class="text-text-dark mb-4 text-sm">Supported: Terraform JSON plan, CloudFormation YAML.</p>
+                    <label for="cost-plan-file" class="file-input-label flex justify-center items-center w-full h-24 rounded-lg cursor-pointer">
+                        <div class="text-center">
+                            <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h4l3-7 4 14 3-7h4"></path></svg>
+                            <p class="mt-1 text-sm text-gray-400"><span id="cost-plan-file-name">Choose File</span></p>
+                        </div>
+                    </label>
+                    <input type="file" id="cost-plan-file" class="hidden" accept=".json,.yaml,.yml,.tf">
+                </div>
+
+                <div class="card p-6 rounded-lg mb-6">
+                    <h3 class="text-xl font-semibold mb-4">Pricing Options</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="region-input" class="block text-sm font-medium text-text-light mb-1">Target Region</label>
+                            <input id="region-input" class="form-input w-full rounded-md" placeholder="e.g., us-east-1">
+                        </div>
+                        <div>
+                            <label for="hours-input" class="block text-sm font-medium text-text-light mb-1">Usage Hours / Month</label>
+                            <input id="hours-input" type="number" value="730" class="form-input w-full rounded-md">
+                        </div>
+                    </div>
+                </div>
+
+                <button id="cost-button" class="btn-primary w-full py-3 rounded-lg text-lg">Analyze Costs</button>
+            </div>
+
+            <div id="cost-results-container">
+                <div id="cost-placeholder" class="flex items-center justify-center h-full">
+                    <div class="text-center text-text-dark">
+                        <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V4m0 16v-4"></path></svg>
+                        <p class="mt-2">Cost analysis results will be displayed here.</p>
+                    </div>
+                </div>
+                <div id="cost-loader" class="hidden flex items-center justify-center h-full"><div class="loader"></div></div>
+                <div id="cost-error-box" class="error-box p-4 rounded-lg hidden"></div>
+                <div id="cost-results-content" class="hidden space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- Container Scan Panel -->
+        <div id="container-panel" class="hidden grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+            <div>
+                <div class="card p-6 rounded-lg mb-6">
+                    <h3 class="text-xl font-semibold mb-4">Container Scan</h3>
+                    <p class="text-text-dark mb-4 text-sm">Scan container images for vulnerabilities and secrets.</p>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="container-image" class="block text-sm font-medium text-text-light mb-1">Container Image</label>
+                            <input id="container-image" class="form-input w-full rounded-md" placeholder="nginx:latest or repository/image:tag">
+                        </div>
+                        <div class="flex items-center">
+                            <input id="include-layers" type="checkbox" class="form-checkbox h-4 w-4" checked>
+                            <label for="include-layers" class="ml-2 block text-sm text-text-light">Include layer-by-layer analysis</label>
+                        </div>
+                        <div>
+                            <button id="container-scan-button" class="btn-primary w-full py-3 rounded-lg text-lg">container-scan 🐳 Scan Container</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="container-results-container">
+                <div id="container-placeholder" class="flex items-center justify-center h-full">
+                    <div class="text-center text-text-dark">
+                        <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h4l3-7 4 14 3-7h4"></path></svg>
+                        <p class="mt-2">Container scan results will be shown here.</p>
+                    </div>
+                </div>
+                <div id="container-loader" class="hidden flex items-center justify-center h-full"><div class="loader"></div></div>
+                <div id="container-error-box" class="error-box p-4 rounded-lg hidden"></div>
+                <div id="container-results-content" class="hidden space-y-4"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const planFileInput = document.getElementById('plan-file');
+        const rulesFileInput = document.getElementById('rules-file');
+        const scanButton = document.getElementById('scan-button');
+        const resultsContainer = document.getElementById('results-container');
+        const resultsContent = document.getElementById('results-content');
+        const errorBox = document.getElementById('error-box');
+        const loader = document.getElementById('loader');
+        const placeholder = document.getElementById('placeholder');
+        
+        // Advanced option inputs
+        const severityFilter = document.getElementById('severity-filter');
+        const cveFilter = document.getElementById('cve-filter');
+        const tagsFilter = document.getElementById('tags-filter');
+        const showRemediation = document.getElementById('show-remediation');
+
+        planFileInput.addEventListener('change', () => {
+            document.getElementById('plan-file-name').textContent = planFileInput.files[0] ? planFileInput.files[0].name : 'Choose File';
+        });
+        rulesFileInput.addEventListener('change', () => {
+            document.getElementById('rules-file-name').textContent = rulesFileInput.files[0] ? rulesFileInput.files[0].name : 'Choose Rules File';
+        });
+
+        scanButton.addEventListener('click', scanNow);
+
+        // Tab navigation handlers
+    const navScan = document.getElementById('nav-scan');
+    const navCost = document.getElementById('nav-cost');
+    const navContainer = document.getElementById('nav-container');
+    const containerPanel = document.getElementById('container-panel');
+    const costPanel = document.getElementById('cost-panel');
+    const scanPanel = document.getElementById('scan-panel');
+    const resultsContainerWrapper = document.getElementById('results-container');
+    const pageTitle = document.getElementById('page-title');
+
+        navScan.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Show scan UI
+            pageTitle.textContent = 'Security Scan';
+            scanPanel.classList.remove('hidden');
+            costPanel.classList.add('hidden');
+            // Ensure CVE panel is hidden when switching to Scan
+            const _cvePanelHide = document.getElementById('cve-panel');
+            if (_cvePanelHide) { _cvePanelHide.classList.add('hidden'); }
+            // update nav active states
+            document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+            navScan.classList.add('active');
+            // hide container panel too
+            if (containerPanel) containerPanel.classList.add('hidden');
+        });
+
+        navCost.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Show cost analysis UI
+            pageTitle.textContent = 'Cost Analysis';
+            scanPanel.classList.add('hidden');
+            costPanel.classList.remove('hidden');
+            // Ensure CVE panel is hidden when switching to Cost
+            const _cvePanelHide2 = document.getElementById('cve-panel');
+            if (_cvePanelHide2) { _cvePanelHide2.classList.add('hidden'); }
+            document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+            navCost.classList.add('active');
+            if (containerPanel) containerPanel.classList.add('hidden');
+        });
+
+        // Container sidebar button: show CVE panel and focus container input
+        if (navContainer) {
+            navContainer.addEventListener('click', (e) => {
+                e.preventDefault();
+                pageTitle.textContent = 'Container Scan';
+                scanPanel.classList.add('hidden');
+                costPanel.classList.add('hidden');
+                cvePanel.classList.add('hidden');
+                if (containerPanel) containerPanel.classList.remove('hidden');
+                document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+                navContainer.classList.add('active');
+                // focus image input when panel visible
+                const img = document.getElementById('container-image');
+                if (img) img.focus();
+            });
+        }
+
+        // Cost panel file input
+        const costPlanInput = document.getElementById('cost-plan-file');
+        costPlanInput.addEventListener('change', () => {
+            document.getElementById('cost-plan-file-name').textContent = costPlanInput.files[0] ? costPlanInput.files[0].name : 'Choose File';
+        });
+
+        // Cost analysis action
+        const costButton = document.getElementById('cost-button');
+        const costResultsContent = document.getElementById('cost-results-content');
+        const costErrorBox = document.getElementById('cost-error-box');
+        const costLoader = document.getElementById('cost-loader');
+        const costPlaceholder = document.getElementById('cost-placeholder');
+
+        costButton.addEventListener('click', analyzeCosts);
+
+        async function analyzeCosts() {
+            const planFile = costPlanInput.files[0];
+            const region = document.getElementById('region-input').value;
+            const hours = document.getElementById('hours-input').value || 730;
+
+            if (!planFile) {
+                showCostError('Please select an infrastructure plan file.');
+                return;
+            }
+
+            showCostLoading();
+
+            const formData = new FormData();
+            formData.append('plan_file', planFile);
+            formData.append('region', region);
+            formData.append('usage_hours', hours);
+
+            try {
+                const response = await fetch('/api/cost', { method: 'POST', body: formData });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'Unknown error from server');
+                }
+
+                const data = await response.json();
+                displayCostResults(data);
+            } catch (err) {
+                showCostError(err.message);
+            }
+        }
+
+        function showCostLoading() {
+            costPlaceholder.classList.add('hidden');
+            costErrorBox.classList.add('hidden');
+            costResultsContent.classList.add('hidden');
+            costLoader.classList.remove('hidden');
+        }
+
+        function showCostResults() {
+            costLoader.classList.add('hidden');
+            costResultsContent.classList.remove('hidden');
+        }
+
+        function showCostError(message) {
+            costLoader.classList.add('hidden');
+            costPlaceholder.classList.add('hidden');
+            costErrorBox.textContent = `Error: ${message}`;
+            costErrorBox.classList.remove('hidden');
+            costResultsContent.classList.add('hidden');
+        }
+
+        function displayCostResults(data) {
+            costResultsContent.innerHTML = '';
+
+            if (data.error) {
+                showCostError(data.error);
+                return;
+            }
+
+            const summaryCard = document.createElement('div');
+            summaryCard.className = 'card p-4 rounded-lg';
+            summaryCard.innerHTML = `
+                <h3 class="font-bold text-lg mb-2">Cost Summary</h3>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <p>Total Monthly Cost: <span class="font-bold text-accent-cyan">$${(data.total_monthly_cost || 0).toFixed(2)}</span></p>
+                    <p>Resource Count: <span class="font-bold text-accent-cyan">${data.resource_count || 0}</span></p>
+                </div>
+            `;
+            costResultsContent.appendChild(summaryCard);
+
+            const resources = data.resources || [];
+            if (resources.length === 0) {
+                const noRes = document.createElement('div');
+                noRes.className = 'card p-4 rounded-lg mt-4 text-center';
+                noRes.innerHTML = `<p class="text-green-400 font-semibold">✅ No billable resources found!</p>`;
+                costResultsContent.appendChild(noRes);
+            } else {
+                resources.forEach(r => {
+                    const card = document.createElement('div');
+                    card.className = 'result-card p-4 rounded-lg';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-lg">${r.resource_type}</h4>
+                            <span class="font-semibold text-sm">${r.provider || 'unknown'}</span>
+                        </div>
+                        <p class="text-sm mt-1">Name: <code class="bg-bg-dark px-1 rounded">${r.resource_name || 'unnamed'}</code></p>
+                        <p class="text-sm mt-2">Monthly Cost: <strong class="text-accent-cyan">$${(parseFloat(r.monthly_cost) || 0).toFixed(2)}</strong></p>
+                    `;
+                    costResultsContent.appendChild(card);
+                });
+            }
+
+            showCostResults();
+        }
+
+        async function scanNow() {
+            const planFile = planFileInput.files[0];
+            const rulesFile = rulesFileInput.files[0];
+
+            if (!planFile) {
+                showError("Please select a Terraform plan file.");
+                return;
+            }
+
+            // Prepare UI for loading state
+            showLoading();
+
+            const formData = new FormData();
+            formData.append('plan_file', planFile);
+            if (rulesFile) {
+                formData.append('rules_file', rulesFile);
+            }
+            // Append advanced options to FormData
+            formData.append('severity_filter', severityFilter.value);
+            formData.append('cve_filter', cveFilter.value);
+            formData.append('tags_filter', tagsFilter.value);
+            formData.append('show_remediation', showRemediation.checked);
+
+            try {
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'An unknown error occurred.');
+                }
+
+                const results = await response.json();
+                displayResults(results);
+
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+        
+        function getSeverityClass(severity) {
+            const s = severity.toUpperCase();
+            if (s === 'CRITICAL') return 'severity-critical';
+            if (s === 'HIGH') return 'severity-high';
+            if (s === 'MEDIUM') return 'severity-medium';
+            if (s === 'LOW') return 'severity-low';
+            return 'severity-info';
+        }
+
+        function displayResults(data) {
+            resultsContent.innerHTML = ''; // Clear previous results
+
+            // --- Display Summary ---
+            const summary = data.summary;
+            if (summary) {
+                const summaryCard = document.createElement('div');
+                summaryCard.className = 'card p-4 rounded-lg';
+                summaryCard.innerHTML = `
+                    <h3 class="font-bold text-lg mb-2">Scan Summary</h3>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <p>Total Vulnerabilities: <span class="font-bold text-accent-cyan">${summary.total_vulnerabilities}</span></p>
+                        <p>Risk Score: <span class="font-bold text-accent-cyan">${summary.risk_score.toFixed(1)} / 10.0</span></p>
+                    </div>
+                `;
+                resultsContent.appendChild(summaryCard);
+            }
+
+            // --- Display Vulnerabilities ---
+            const vulnerabilities = data.vulnerabilities || [];
+            if (vulnerabilities.length === 0) {
+                 const noVulnCard = document.createElement('div');
+                noVulnCard.className = 'card p-4 rounded-lg mt-4 text-center';
+                noVulnCard.innerHTML = `<p class="text-green-400 font-semibold">✅ No vulnerabilities found!</p>`;
+                resultsContent.appendChild(noVulnCard);
+            } else {
+                vulnerabilities.forEach(vuln => {
+                    const vulnCard = document.createElement('div');
+                    vulnCard.className = 'result-card p-4 rounded-lg';
+                    
+                    let remediationHTML = '';
+                    if (showRemediation.checked && vuln.remediation) {
+                        remediationHTML = `<p class="text-sm mt-2"><strong class="text-green-400">Remediation:</strong> ${vuln.remediation}</p>`;
+                    }
+
+                    vulnCard.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-lg">${vuln.title}</h4>
+                            <span class="font-semibold text-sm px-2 py-1 rounded-md ${getSeverityClass(vuln.severity)}">${vuln.severity}</span>
+                        </div>
+                        <p class="text-sm text-text-dark mt-1">${vuln.id} | Score: ${vuln.severity_score}</p>
+                        <p class="text-sm mt-2">${vuln.description}</p>
+                        <p class="text-sm mt-2"><strong>Resource:</strong> <code class="bg-bg-dark px-1 rounded">${vuln.resource.type}.${vuln.resource.name}</code></p>
+                        ${remediationHTML}
+                    `;
+                    resultsContent.appendChild(vulnCard);
+                });
+            }
+
+            showResults();
+        }
+
+        function showLoading() {
+            placeholder.classList.add('hidden');
+            errorBox.classList.add('hidden');
+            resultsContent.classList.add('hidden');
+            loader.classList.remove('hidden');
+        }
+
+        function showResults() {
+            loader.classList.add('hidden');
+            resultsContent.classList.remove('hidden');
+        }
+
+        function showError(message) {
+            loader.classList.add('hidden');
+            placeholder.classList.add('hidden');
+            errorBox.textContent = `Error: ${message}`;
+            errorBox.classList.remove('hidden');
+            resultsContent.classList.add('hidden');
+        }
+
+        // --- CVE Panel Logic ---
+        const navCve = document.getElementById('nav-cve');
+        const cvePanel = document.getElementById('cve-panel');
+        const cveUpdateButton = document.getElementById('cve-update-button');
+        const cveBulkButton = document.getElementById('cve-bulk-button');
+        const cveSearchButton = document.getElementById('cve-search-button');
+        const cveStatsButton = document.getElementById('cve-stats-button');
+        const cveQueryInput = document.getElementById('cve-query');
+        const cveResultsContent = document.getElementById('cve-results-content');
+        const cveErrorBox = document.getElementById('cve-error-box');
+        const cveLoader = document.getElementById('cve-loader');
+        const cvePlaceholder = document.getElementById('cve-placeholder');
+
+        navCve.addEventListener('click', (e) => {
+            e.preventDefault();
+            pageTitle.textContent = 'CVE Database';
+            scanPanel.classList.add('hidden');
+            costPanel.classList.add('hidden');
+            cvePanel.classList.remove('hidden');
+            navCve.classList.add('bg-accent-cyan', 'text-gray-900');
+            navScan.classList.remove('bg-accent-cyan', 'text-gray-900');
+            navCost.classList.remove('bg-accent-cyan', 'text-gray-900');
+        });
+
+        function showCveLoading() {
+            cvePlaceholder.classList.add('hidden');
+            cveErrorBox.classList.add('hidden');
+            cveResultsContent.classList.add('hidden');
+            cveLoader.classList.remove('hidden');
+        }
+
+        function showCveResults() {
+            cveLoader.classList.add('hidden');
+            cveResultsContent.classList.remove('hidden');
+        }
+
+        function showCveError(message) {
+            cveLoader.classList.add('hidden');
+            cvePlaceholder.classList.add('hidden');
+            cveErrorBox.textContent = `Error: ${message}`;
+            cveErrorBox.classList.remove('hidden');
+            cveResultsContent.classList.add('hidden');
+        }
+
+        function displayCveGenericResult(obj) {
+            cveResultsContent.innerHTML = '';
+            // If server returned structured search results
+            if (obj && obj.search_results) {
+                const table = document.createElement('div');
+                table.className = 'card p-4 rounded-lg overflow-auto';
+                const rows = obj.search_results;
+                const tbl = document.createElement('table');
+                tbl.className = 'w-full text-sm';
+                tbl.style.borderCollapse = 'collapse';
+
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+                    <tr class="text-left text-xs text-text-dark">
+                        <th style="padding:8px; border-bottom:1px solid #444;">CVE ID</th>
+                        <th style="padding:8px; border-bottom:1px solid #444;">Severity</th>
+                        <th style="padding:8px; border-bottom:1px solid #444;">Score</th>
+                        <th style="padding:8px; border-bottom:1px solid #444;">Description</th>
+                    </tr>`;
+                tbl.appendChild(thead);
+
+                const tbody = document.createElement('tbody');
+                rows.forEach(r => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="padding:8px; vertical-align:top; border-bottom:1px solid #333;">${r.cve_id || ''}</td>
+                        <td style="padding:8px; vertical-align:top; border-bottom:1px solid #333;">${r.severity || ''}</td>
+                        <td style="padding:8px; vertical-align:top; border-bottom:1px solid #333;">${r.cvss_score != null ? r.cvss_score : ''}</td>
+                        <td style="padding:8px; vertical-align:top; border-bottom:1px solid #333; white-space:normal;">${(r.description || '').replace(/</g, '&lt;')}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                tbl.appendChild(tbody);
+                table.appendChild(tbl);
+                cveResultsContent.appendChild(table);
+                showCveResults();
+                return;
+            }
+
+            // If server returned structured stats
+            if (obj && obj.stats) {
+                const s = obj.stats;
+                const card = document.createElement('div');
+                card.className = 'card p-4 rounded-lg';
+                card.innerHTML = `
+                    <h3 class="font-bold text-lg mb-2">CVE Database Statistics</h3>
+                    <div class="grid grid-cols-2 gap-2 text-sm mb-3">
+                        <p>Total CVEs: <strong class="text-accent-cyan">${s.total_cves || 0}</strong></p>
+                        <p>Recent (30d): <strong class="text-accent-cyan">${s.recent_cves_30_days || 0}</strong></p>
+                        <p>Database Size (MB): <strong class="text-accent-cyan">${s.database_size_mb ? s.database_size_mb.toFixed(1) : '0.0'}</strong></p>
+                        <p>Last Update: <strong class="text-accent-cyan">${s.last_update || 'Never'}</strong></p>
+                    </div>
+                `;
+                cveResultsContent.appendChild(card);
+
+                // Severity distribution table
+                if (s.severity_distribution) {
+                    const distCard = document.createElement('div');
+                    distCard.className = 'card p-4 rounded-lg overflow-auto';
+                    const tbl = document.createElement('table');
+                    tbl.className = 'w-full text-sm';
+                    tbl.innerHTML = `
+                        <thead class="text-left text-xs text-text-dark"><tr><th style="padding:8px; border-bottom:1px solid #444;">Severity</th><th style="padding:8px; border-bottom:1px solid #444;">Count</th><th style="padding:8px; border-bottom:1px solid #444;">Percentage</th></tr></thead>
+                    `;
+                    const tbody = document.createElement('tbody');
+                    const total = s.total_cves || 0;
+                    for (const [sev, cnt] of Object.entries(s.severity_distribution)) {
+                        const tr = document.createElement('tr');
+                        const perc = total > 0 ? ((cnt / total) * 100).toFixed(1) + '%' : '0.0%';
+                        tr.innerHTML = `<td style="padding:8px; vertical-align:top; border-bottom:1px solid #333;">${sev}</td><td style="padding:8px; vertical-align:top; border-bottom:1px solid #333;">${cnt}</td><td style="padding:8px; vertical-align:top; border-bottom:1px solid #333;">${perc}</td>`;
+                        tbody.appendChild(tr);
+                    }
+                    tbl.appendChild(tbody);
+                    distCard.appendChild(tbl);
+                    cveResultsContent.appendChild(distCard);
+                }
+
+                showCveResults();
+                return;
+            }
+
+            // Fallback: show raw console output or JSON
+            const card = document.createElement('div');
+            card.className = 'card p-4 rounded-lg';
+            if (obj && obj.output) {
+                card.innerHTML = `<pre style="white-space:pre-wrap; word-break:break-word;">${obj.output.replace(/</g, '&lt;')}</pre>`;
+            } else {
+                card.innerHTML = `<pre style="white-space:pre-wrap; word-break:break-word;">${JSON.stringify(obj, null, 2)}</pre>`;
+            }
+            cveResultsContent.appendChild(card);
+            showCveResults();
+        }
+
+        cveUpdateButton.addEventListener('click', async () => {
+            showCveLoading();
+            try {
+                const form = new FormData();
+                form.append('action', 'update');
+                const resp = await fetch('/api/cve', { method: 'POST', body: form });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.detail || 'Unknown error');
+                }
+                const data = await resp.json();
+                displayCveGenericResult(data);
+            } catch (err) {
+                showCveError(err.message);
+            }
+        });
+
+        cveBulkButton.addEventListener('click', async () => {
+            showCveLoading();
+            try {
+                const form = new FormData();
+                form.append('action', 'bulk-download');
+                const resp = await fetch('/api/cve', { method: 'POST', body: form });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.detail || 'Unknown error');
+                }
+                const data = await resp.json();
+                displayCveGenericResult(data);
+            } catch (err) {
+                showCveError(err.message);
+            }
+        });
+
+        cveSearchButton.addEventListener('click', async () => {
+            const q = cveQueryInput.value.trim();
+            if (!q) {
+                showCveError('Please enter search keywords or a technology name.');
+                return;
+            }
+            showCveLoading();
+            try {
+                const form = new FormData();
+                form.append('action', 'search');
+                form.append('query', q);
+                const resp = await fetch('/api/cve', { method: 'POST', body: form });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.detail || 'Unknown error');
+                }
+                const data = await resp.json();
+                displayCveGenericResult(data);
+            } catch (err) {
+                showCveError(err.message);
+            }
+        });
+
+        cveStatsButton.addEventListener('click', async () => {
+            showCveLoading();
+            try {
+                const form = new FormData();
+                form.append('action', 'stats');
+                const resp = await fetch('/api/cve', { method: 'POST', body: form });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.detail || 'Unknown error');
+                }
+                const data = await resp.json();
+                displayCveGenericResult(data);
+            } catch (err) {
+                showCveError(err.message);
+            }
+        });
+
+        // Container scan handler (renders into container panel results)
+        const containerScanButton = document.getElementById('container-scan-button');
+        const containerImageInput = document.getElementById('container-image');
+        const includeLayersCheckbox = document.getElementById('include-layers');
+        const containerResultsContent = document.getElementById('container-results-content');
+        const containerErrorBox = document.getElementById('container-error-box');
+        const containerLoader = document.getElementById('container-loader');
+        const containerPlaceholder = document.getElementById('container-placeholder');
+
+        function showContainerLoading() {
+            containerPlaceholder.classList.add('hidden');
+            containerErrorBox.classList.add('hidden');
+            containerResultsContent.classList.add('hidden');
+            containerLoader.classList.remove('hidden');
+        }
+
+        function showContainerResults() {
+            containerLoader.classList.add('hidden');
+            containerResultsContent.classList.remove('hidden');
+        }
+
+        function showContainerError(message) {
+            containerLoader.classList.add('hidden');
+            containerPlaceholder.classList.add('hidden');
+            containerErrorBox.textContent = `Error: ${message}`;
+            containerErrorBox.classList.remove('hidden');
+            containerResultsContent.classList.add('hidden');
+        }
+
+        containerScanButton.addEventListener('click', async () => {
+            const image = containerImageInput.value.trim();
+            if (!image) {
+                showContainerError('Please provide a container image (e.g., nginx:latest)');
+                return;
+            }
+            showContainerLoading();
+            try {
+                const form = new FormData();
+                form.append('image', image);
+                form.append('include_layers', includeLayersCheckbox.checked ? 'true' : 'false');
+
+                const resp = await fetch('/api/container-scan', { method: 'POST', body: form });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.detail || 'Unknown error');
+                }
+                const data = await resp.json();
+                // reuse generic display but render into container results
+                containerResultsContent.innerHTML = '';
+                const card = document.createElement('div');
+                card.className = 'card p-4 rounded-lg';
+                if (data && data.output) {
+                    card.innerHTML = `<pre style="white-space:pre-wrap; word-break:break-word;">${data.output.replace(/</g, '&lt;')}</pre>`;
+                } else {
+                    card.innerHTML = `<pre style="white-space:pre-wrap; word-break:break-word;">${JSON.stringify(data, null, 2)}</pre>`;
+                }
+                containerResultsContent.appendChild(card);
+                showContainerResults();
+            } catch (err) {
+                showContainerError(err.message);
+            }
+        });
+    </script>
+
+</body>
+</html>
+
