@@ -967,6 +967,27 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -e .
 ```
 
+Set the initial password for admin user
+
+python - <<'PY'
+import sqlite3, os, hashlib, secrets
+p = os.path.join(r"c:\Users\awezk\Desktop\Infraware", "src", "infraware_auth.db")
+conn = sqlite3.connect(p)
+cur = conn.cursor()
+new_pw = "Password"
+# If bcrypt is installed and you want to use it, set use_bcrypt=True
+use_bcrypt = False
+if use_bcrypt:
+    import bcrypt
+    phash = bcrypt.hashpw(new_pw.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+else:
+    phash = hashlib.sha256(new_pw.encode('utf-8')).hexdigest()
+cur.execute("UPDATE users SET password_hash = ? WHERE username = ?", (phash, "admin"))
+conn.commit()
+conn.close()
+print("Admin password updated locally.")
+PY
+
 ## Help and Documentation
 
 Get help for any command:

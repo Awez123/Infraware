@@ -14,11 +14,7 @@ def dockerfile_scan_cmd(
         import asyncio
 
         scanner = ContainerSecurityScanner()
-
-        async def scan():
-            return await scanner.scan_dockerfile(dockerfile)
-
-        issues = asyncio.run(scan())
+        issues = scanner.scan_dockerfile(dockerfile)
 
         if output_format.lower() == "json":
             console.print_json(data=[issue.to_dict() for issue in issues])

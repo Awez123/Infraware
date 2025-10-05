@@ -1,16 +1,200 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request, Response, Depends
 from fastapi.responses import HTMLResponse, StreamingResponse
 import json
 import tempfile
 import os
 import subprocess
 from typing import List
+import sqlite3
+import hashlib
+import logging
+try:
+    import bcrypt
+except Exception:
+    bcrypt = None
+import secrets
+import time
+from datetime import datetime, timedelta
 
 # This is our FastAPI application
 app = FastAPI(title="InfraWare Server")
 
 # This is the path to our simple HTML frontend
 HTML_FILE_PATH = os.path.join(os.path.dirname(__file__), "templates/index.html")
+
+# --- Simple SQLite-backed auth helpers ---
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', '..', 'infraware_auth.db')
+SESSION_TTL = 3600
+
+LOG = logging.getLogger("infraware.server")
+LOG.setLevel(logging.INFO)
+
+
+def _get_conn():
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    conn = _get_conn()
+    cur = conn.cursor()
+    cur.execute('''CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        is_admin INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS sessions (
+        token TEXT PRIMARY KEY,
+        user_id INTEGER,
+        expires_at INTEGER
+    )''')
+    conn.commit()
+    conn.close()
+
+    # If users table is empty, create an initial admin user with a random password and log it.
+    conn = _get_conn()
+    cur = conn.cursor()
+    cur.execute('SELECT COUNT(1) as cnt FROM users')
+    row = cur.fetchone()
+    try:
+        cnt = row['cnt'] if isinstance(row, dict) or hasattr(row, '__getitem__') else row[0]
+    except Exception:
+        cnt = 0
+    if not cnt:
+        # Create initial admin
+        initial_password = secrets.token_urlsafe(12)
+        if bcrypt:
+            phash = bcrypt.hashpw(initial_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        else:
+            phash = hashlib.sha256(initial_password.encode('utf-8')).hexdigest()
+        conn.execute('INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, ?)', ('admin', phash, 1))
+        conn.commit()
+        LOG.info(f"Created initial admin user 'admin' with password: {initial_password}")
+        # Also write to a local file next to DB for operator retrieval (convenient during initial setup)
+        try:
+            info_path = DB_PATH + '.initial_admin.txt'
+            with open(info_path, 'w', encoding='utf-8') as fh:
+                fh.write(f"Initial admin username: admin\n")
+                fh.write(f"Initial admin password: {initial_password}\n")
+                fh.write(f"NOTE: Remove this file after retrieving the password.\n")
+        except Exception:
+            LOG.exception('Failed to write initial admin password file')
+    conn.close()
+
+init_db()
+
+# In-memory token cache for quick lookups; persisted sessions are also stored in DB
+_TOKEN_CACHE = {}
+
+def _hash_password(password: str) -> str:
+    """
+    Hash a password. Use bcrypt when available. Returns the stored hash string.
+    """
+    if bcrypt:
+        return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
+
+def _create_user(username: str, password: str, is_admin: bool = False):
+    conn = _get_conn()
+    try:
+        phash = _hash_password(password)
+        conn.execute('INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, ?)', (username, phash, 1 if is_admin else 0))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.close()
+        raise HTTPException(status_code=400, detail='Username already exists')
+    conn.close()
+
+def _verify_user(username: str, password: str):
+    conn = _get_conn()
+    cur = conn.execute('SELECT id, password_hash, is_admin FROM users WHERE username = ?', (username,))
+    row = cur.fetchone()
+    conn.close()
+    if not row:
+        return None
+    stored = row['password_hash']
+    # If bcrypt is available and stored hash indicates bcrypt (starts with $2b$ or $2y$), use bcrypt.checkpw
+    try:
+        if bcrypt and isinstance(stored, str) and stored.startswith('$2'):
+            ok = bcrypt.checkpw(password.encode('utf-8'), stored.encode('utf-8'))
+        else:
+            # fallback: compare sha256
+            ok = hashlib.sha256(password.encode('utf-8')).hexdigest() == stored
+    except Exception:
+        ok = False
+
+    if ok:
+        return {'id': row['id'], 'username': username, 'is_admin': bool(row['is_admin'])}
+    return None
+
+def _create_session(user_id: int, ttl_seconds: int = 3600):
+    token = secrets.token_hex(32)
+    expires_at = int(time.time()) + ttl_seconds
+    conn = _get_conn()
+    conn.execute('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)', (token, user_id, expires_at))
+    conn.commit()
+    conn.close()
+    _TOKEN_CACHE[token] = {'user_id': user_id, 'expires_at': expires_at}
+    return token
+
+def _get_user_by_token(token: str):
+    if not token:
+        return None
+    cached = _TOKEN_CACHE.get(token)
+    now = int(time.time())
+    if cached and cached['expires_at'] > now:
+        # fetch user
+        conn = _get_conn()
+        cur = conn.execute('SELECT id, username, is_admin FROM users WHERE id = ?', (cached['user_id'],))
+        row = cur.fetchone()
+        conn.close()
+        if row:
+            return {'id': row['id'], 'username': row['username'], 'is_admin': bool(row['is_admin'])}
+
+    # fall back to DB lookup
+    conn = _get_conn()
+    cur = conn.execute('SELECT user_id, expires_at FROM sessions WHERE token = ?', (token,))
+    srow = cur.fetchone()
+    if not srow:
+        conn.close()
+        return None
+    if srow['expires_at'] < now:
+        # expired
+        conn.execute('DELETE FROM sessions WHERE token = ?', (token,))
+        conn.commit()
+        conn.close()
+        _TOKEN_CACHE.pop(token, None)
+        return None
+
+    cur = conn.execute('SELECT id, username, is_admin FROM users WHERE id = ?', (srow['user_id'],))
+    row = cur.fetchone()
+    conn.close()
+    if not row:
+        return None
+    # cache
+    _TOKEN_CACHE[token] = {'user_id': row['id'], 'expires_at': srow['expires_at']}
+    return {'id': row['id'], 'username': row['username'], 'is_admin': bool(row['is_admin'])}
+
+def _require_auth(request: Request):
+    token = None
+    # Accept token from Authorization: Bearer <token> or cookie 'infraware_token'
+    auth = request.headers.get('authorization')
+    if auth and auth.lower().startswith('bearer '):
+        token = auth.split(None, 1)[1].strip()
+    if not token:
+        token = request.cookies.get('infraware_token')
+    user = _get_user_by_token(token)
+    if not user:
+        raise HTTPException(status_code=401, detail='Unauthorized')
+    return user
+
+def _require_admin(request: Request):
+    user = _require_auth(request)
+    if not user.get('is_admin'):
+        raise HTTPException(status_code=403, detail='Admin privileges required')
+    return user
 
 def run_infraware_command(command: List[str]):
     """A helper function to run infraware commands and handle JSON output."""
@@ -56,7 +240,7 @@ def run_infraware_command(command: List[str]):
 
 
 @app.post("/api/scan")
-async def api_scan_plan(plan_file: UploadFile = File(...), rules_file: UploadFile = File(None)):
+async def api_scan_plan(request: Request, plan_file: UploadFile = File(...), rules_file: UploadFile = File(None)):
     """
     API endpoint that accepts a tfplan.json and optional rules file,
     runs the scan, and returns the results.
@@ -65,6 +249,9 @@ async def api_scan_plan(plan_file: UploadFile = File(...), rules_file: UploadFil
         content = await plan_file.read()
         tmp_plan.write(content.decode("utf-8"))
         temp_plan_path = tmp_plan.name
+
+    # require authenticated user
+    _require_auth(request)
 
     command = ["infraware", "scan", temp_plan_path, "--format", "json"]
 
@@ -86,14 +273,114 @@ async def api_scan_plan(plan_file: UploadFile = File(...), rules_file: UploadFil
     return scan_results
 
 
+# --- Authentication endpoints ---
+@app.post('/api/auth/register')
+def api_register(username: str = Form(...), password: str = Form(...)):
+    # create standard application user (non-admin)
+    _create_user(username, password, is_admin=False)
+    return {'status': 'ok', 'username': username}
+
+
+@app.post('/api/auth/login')
+def api_login(response: Response, username: str = Form(...), password: str = Form(...)):
+    user = _verify_user(username, password)
+    if not user:
+        raise HTTPException(status_code=401, detail='Invalid credentials')
+    token = _create_session(user['id'], ttl_seconds=SESSION_TTL)
+    # Set secure HttpOnly cookie so browsers include it automatically
+    # Cookie expires in SESSION_TTL seconds
+    # Use integer epoch seconds for expires to avoid timezone-aware datetime requirement
+    expires_ts = int(time.time()) + SESSION_TTL
+    response.set_cookie('infraware_token', token, httponly=True, secure=False, samesite='lax', expires=expires_ts)
+    # return token only for non-browser clients; browsers will use cookie
+    return {'token': token, 'user': {'id': user['id'], 'username': user['username'], 'is_admin': user['is_admin']}}
+
+
+@app.post('/api/auth/logout')
+@app.post('/api/auth/logout')
+def api_logout(response: Response, token: str = Form(None), request: Request = None):
+    # allow token in form or in Authorization header / cookie
+    if not token and request:
+        auth = request.headers.get('authorization')
+        if auth and auth.lower().startswith('bearer '):
+            token = auth.split(None, 1)[1].strip()
+        if not token:
+            token = request.cookies.get('infraware_token')
+    if not token:
+        raise HTTPException(status_code=400, detail='Missing token')
+    conn = _get_conn()
+    conn.execute('DELETE FROM sessions WHERE token = ?', (token,))
+    conn.commit()
+    conn.close()
+    _TOKEN_CACHE.pop(token, None)
+    # Clear cookie on logout
+    response.delete_cookie('infraware_token')
+    return {'status': 'ok'}
+
+
+@app.post('/api/auth/create_user')
+def api_create_user(username: str = Form(...), password: str = Form(...), is_admin: bool = Form(False), request: Request = None):
+    # Admin-only endpoint to create users
+    _require_admin(request)
+    _create_user(username, password, is_admin=bool(is_admin))
+    return {'status': 'ok', 'username': username, 'is_admin': bool(is_admin)}
+
+
+@app.get('/api/auth/users')
+def api_list_users(request: Request):
+    """Admin-only: list all users (id, username, is_admin, created_at)."""
+    _require_admin(request)
+    conn = _get_conn()
+    cur = conn.execute('SELECT id, username, is_admin, created_at FROM users ORDER BY id')
+    rows = cur.fetchall()
+    conn.close()
+    users = []
+    for r in rows:
+        users.append({'id': r['id'], 'username': r['username'], 'is_admin': bool(r['is_admin']), 'created_at': r['created_at']})
+    return {'users': users}
+
+
+@app.delete('/api/auth/users/{user_id}')
+def api_delete_user(request: Request, user_id: int):
+    """Admin-only: delete a user by id. Safeguards: cannot delete yourself; cannot remove the last admin."""
+    admin = _require_admin(request)
+    if user_id == admin['id']:
+        raise HTTPException(status_code=400, detail='Cannot delete the currently authenticated admin via this endpoint')
+
+    conn = _get_conn()
+    cur = conn.execute('SELECT id, username, is_admin FROM users WHERE id = ?', (user_id,))
+    row = cur.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail='User not found')
+
+    if row['is_admin']:
+        # count other admins
+        cur2 = conn.execute('SELECT COUNT(1) as cnt FROM users WHERE is_admin = 1')
+        c = cur2.fetchone()
+        try:
+            admin_count = c['cnt']
+        except Exception:
+            admin_count = c[0]
+        if admin_count <= 1:
+            conn.close()
+            raise HTTPException(status_code=400, detail='Cannot delete the last admin user')
+
+    # delete any sessions for this user
+    conn.execute('DELETE FROM sessions WHERE user_id = ?', (user_id,))
+    conn.execute('DELETE FROM users WHERE id = ?', (user_id,))
+    conn.commit()
+    conn.close()
+    # Also clear from in-memory token cache any tokens belonging to deleted user
+    to_remove = [t for t, v in list(_TOKEN_CACHE.items()) if v.get('user_id') == user_id]
+    for t in to_remove:
+        _TOKEN_CACHE.pop(t, None)
+
+    return {'status': 'ok', 'deleted_user_id': user_id}
+
+
 @app.post("/api/cost")
-async def api_cost_analysis(
-    plan_file: UploadFile = File(...),
-    region: str = Form(None),
-    usage_hours: float = Form(730.0),
-    # format is accepted but server forces JSON output for machine consumption
-    output_format: str = Form("json")
-):
+async def api_cost_analysis(request: Request, plan_file: UploadFile = File(...), region: str = Form(None), usage_hours: float = Form(730.0), output_format: str = Form("json")):
     """
     API endpoint that accepts a tfplan.json (or other infrastructure file),
     runs the cost analysis and returns JSON results.
@@ -107,6 +394,9 @@ async def api_cost_analysis(
             # fallback if already str-like
             tmp_plan.write(str(content))
         temp_plan_path = tmp_plan.name
+
+    # require authenticated user
+    _require_auth(request)
 
     # First try to run cost analysis directly by importing the analyzer class
     try:
@@ -143,19 +433,16 @@ async def api_cost_analysis(
 
 
 @app.post("/api/cve")
-async def api_cve_action(
-    action: str = Form(...),
-    data_file: UploadFile = File(None),
-    query: str = Form(None),
-    # allow optional flags
-    include_history: bool = Form(False),
-):
+async def api_cve_action(request: Request, action: str = Form(...), data_file: UploadFile = File(None), query: str = Form(None), include_history: bool = Form(False)):
     """
     API endpoint to run CVE related actions.
     action: one of 'update', 'bulk-download', 'search', 'stats'
     For 'search', provide 'query' (keywords or technology).
     For 'update' or 'bulk-download', no extra fields required; server will run the appropriate command.
     """
+    # require authenticated user for CVE actions
+    _require_auth(request)
+
     # Prefer returning structured JSON for search/stats by calling CVEDatabase directly.
     if action == 'search':
         if not query:
@@ -232,6 +519,10 @@ async def api_cve_action(
             return {"output": buf.getvalue(), "exit_code": getattr(ex, 'exit_code', 0)}
 
     try:
+        # For potentially dangerous actions like update and bulk-download, require admin
+        if action in ('update', 'bulk-download'):
+            _require_admin(request)
+
         result = await _asyncio.to_thread(_run_sync_action, action, query)
         # If thread returned a dict (output or exit code), just return it
         if isinstance(result, dict):
@@ -283,6 +574,9 @@ async def api_container_scan(request: Request, image: str = Form(...), include_l
     import typer as _typer
     import subprocess as _subprocess
 
+    # require authenticated user for container scanning
+    _require_auth(request)
+
     # Quick pre-check: is Docker available? If not, return a clear error with remediation steps.
     try:
         # Try a lightweight docker CLI call to check availability
@@ -301,16 +595,15 @@ async def api_container_scan(request: Request, image: str = Form(...), include_l
         ))
 
     def _run_scan(img: str, layers: bool):
-        # Non-streaming helper: capture and return full output
-        buf = io.StringIO()
+        # Non-streaming helper: run scanner directly and return JSON-serializable dict
         try:
-            with contextlib.redirect_stdout(buf):
-                from infraware.commands.container_scan import container_scan_cmd
-                # call with explicit kwargs to avoid Typer OptionInfo
-                container_scan_cmd(image=img, include_layers=layers, output_format='table')
-            return {"output": buf.getvalue()}
-        except _typer.Exit as e:
-            return {"output": buf.getvalue(), "exit_code": getattr(e, 'exit_code', 0)}
+            from infraware.utils.container_scanner import ContainerSecurityScanner
+            scanner = ContainerSecurityScanner()
+            result = scanner.scan_image(img)
+            # ensure JSON-serializable
+            return result.to_dict() if hasattr(result, 'to_dict') else dict(result)
+        except Exception as e:
+            return {"error": str(e)}
 
     def _stream_scan_process(img: str, layers: bool):
         """Run the CLI in a subprocess and stream its stdout as SSE lines."""
