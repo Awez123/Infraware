@@ -5,6 +5,7 @@ import tempfile
 import os
 import subprocess
 from typing import List
+from pathlib import Path
 
 # This is our FastAPI application
 app = FastAPI(title="InfraWare Server")
@@ -20,14 +21,26 @@ def run_infraware_command(command: List[str]):
         env = os.environ.copy()
         env["PYTHONUTF8"] = "1"
         
+        # Get the InfraWare project directory (where the rules folder is located)
+        server_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(server_dir)))
+        
         result = subprocess.run(
             command,
             capture_output=True,
             text=True,
             encoding='utf-8',
             errors='ignore',
-            env=env  # <-- Pass the modified environment to the subprocess
+            env=env,  # <-- Pass the modified environment to the subprocess
+            cwd=project_root  # <-- Set working directory to project root
         )
+        
+        # Debug logging
+        print(f"🔧 DEBUG: Command: {command}")
+        print(f"🔧 DEBUG: Working dir: {project_root}")
+        print(f"🔧 DEBUG: Return code: {result.returncode}")
+        print(f"🔧 DEBUG: Stdout: {result.stdout[:500]}...")
+        print(f"🔧 DEBUG: Stderr: {result.stderr}")
         
         # Find the start of the JSON output
         json_start_index = result.stdout.find('{')
@@ -58,15 +71,24 @@ def run_infraware_command(command: List[str]):
 @app.post("/api/scan")
 async def api_scan_plan(plan_file: UploadFile = File(...), rules_file: UploadFile = File(None)):
     """
-    API endpoint that accepts a tfplan.json and optional rules file,
+    API endpoint that accepts infrastructure files (.tf, .json, .yaml, .yml, .hcl) and optional rules file,
     runs the scan, and returns the results.
     """
-    with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".json", encoding="utf-8") as tmp_plan:
+    # Determine file extension
+    file_extension = Path(plan_file.filename).suffix.lower()
+    
+    # Create temp file with appropriate extension
+    with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=file_extension, encoding="utf-8") as tmp_plan:
         content = await plan_file.read()
         tmp_plan.write(content.decode("utf-8"))
         temp_plan_path = tmp_plan.name
 
     command = ["infraware", "scan", temp_plan_path, "--format", "json"]
+
+    # Get absolute path to rules directory
+    server_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(server_dir)))
+    rules_dir = os.path.join(project_root, "rules")
 
     if rules_file:
         with tempfile.TemporaryDirectory() as temp_rules_dir:
@@ -77,8 +99,8 @@ async def api_scan_plan(plan_file: UploadFile = File(...), rules_file: UploadFil
             command.extend(["--rules-dir", temp_rules_dir])
             scan_results = run_infraware_command(command)
     else:
-        # Assuming default rules are in a 'rules' directory relative to where the server is run
-        command.extend(["--rules-dir", "rules"])
+        # Use absolute path to default rules directory
+        command.extend(["--rules-dir", rules_dir])
         scan_results = run_infraware_command(command)
     
     os.unlink(temp_plan_path)
@@ -95,10 +117,14 @@ async def api_cost_analysis(
     output_format: str = Form("json")
 ):
     """
-    API endpoint that accepts a tfplan.json (or other infrastructure file),
+    API endpoint that accepts infrastructure files (.tf, .json, .yaml, .yml, .hcl),
     runs the cost analysis and returns JSON results.
     """
-    with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".json", encoding="utf-8") as tmp_plan:
+    # Determine file extension
+    file_extension = Path(plan_file.filename).suffix.lower()
+    
+    # Create temp file with appropriate extension
+    with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=file_extension, encoding="utf-8") as tmp_plan:
         content = await plan_file.read()
         # write bytes decoded as utf-8; allow either text or bytes uploads
         try:
@@ -274,96 +300,6 @@ async def api_cve_action(
                     pass
 
 
-@app.post("/api/container-scan")
-async def api_container_scan(request: Request, image: str = Form(...), include_layers: bool = Form(True), stream: bool = Form(False)):
-    """Run container_scan_cmd programmatically and return console output or JSON result."""
-    import io
-    import contextlib
-    import asyncio as _asyncio
-    import typer as _typer
-    import subprocess as _subprocess
-
-    # Quick pre-check: is Docker available? If not, return a clear error with remediation steps.
-    try:
-        # Try a lightweight docker CLI call to check availability
-        chk = _subprocess.run(["docker", "version", "--format", "{{.Server.Version}}"], capture_output=True, text=True, timeout=3)
-        if chk.returncode != 0:
-            raise FileNotFoundError("docker CLI returned non-zero")
-    except FileNotFoundError:
-        raise HTTPException(status_code=400, detail=(
-            "Docker client not available on the server. Container scanning requires Docker or an image pull mechanism. "
-            "Install Docker Desktop / Docker Engine and ensure the server process can access the Docker daemon. "
-            "Alternatively configure a registry-accessible scan mode."
-        ))
-    except Exception:
-        raise HTTPException(status_code=400, detail=(
-            "Unable to contact Docker daemon. Ensure Docker is running and the server has permission to access it (on Windows: run Docker Desktop; on Linux: add the server user to the docker group or run with appropriate privileges)."
-        ))
-
-    def _run_scan(img: str, layers: bool):
-        # Non-streaming helper: capture and return full output
-        buf = io.StringIO()
-        try:
-            with contextlib.redirect_stdout(buf):
-                from infraware.commands.container_scan import container_scan_cmd
-                # call with explicit kwargs to avoid Typer OptionInfo
-                container_scan_cmd(image=img, include_layers=layers, output_format='table')
-            return {"output": buf.getvalue()}
-        except _typer.Exit as e:
-            return {"output": buf.getvalue(), "exit_code": getattr(e, 'exit_code', 0)}
-
-    def _stream_scan_process(img: str, layers: bool):
-        """Run the CLI in a subprocess and stream its stdout as SSE lines."""
-        # Run the CLI command and yield lines as they appear
-        cmd = ["infraware", "container-scan", img, "--format", "table"]
-        if not layers:
-            cmd.append('--no-layers')
-
-        env = os.environ.copy()
-        env["PYTHONUTF8"] = "1"
-        # Disable Python output buffering so prints appear as they happen
-        env["PYTHONUNBUFFERED"] = "1"
-
-        # Start subprocess with stdout pipe
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, env=env)
-
-        try:
-            # Yield SSE event for each line as it becomes available
-            if proc.stdout is None:
-                return
-            # Use readline loop to avoid blocking iterators on some platforms
-            while True:
-                line = proc.stdout.readline()
-                if line == '' and proc.poll() is not None:
-                    break
-                if line:
-                    yield f"data: {line.rstrip()}\n\n"
-
-            proc.wait()
-            yield f"event: done\ndata: exit_code={proc.returncode}\n\n"
-        finally:
-            try:
-                if proc.poll() is None:
-                    proc.kill()
-            except Exception:
-                pass
-
-    try:
-        # If the client requested streaming, return an SSE StreamingResponse
-        if stream:
-            return StreamingResponse(_stream_scan_process(image, include_layers), media_type='text/event-stream')
-
-        result = await _asyncio.to_thread(_run_scan, image, include_layers)
-        return result
-    except Exception:
-        # fallback to subprocess
-        cmd = ["infraware", "container-scan", image, "--format", "json"]
-        if not include_layers:
-            cmd.append('--no-layers')
-        res = run_infraware_command(cmd)
-        return res
-
-
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
     """
@@ -371,4 +307,11 @@ async def serve_frontend():
     """
     with open(HTML_FILE_PATH, "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read(), status_code=200)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    print("🚀 Starting InfraWare Web Server...")
+    print("📊 Dashboard will be available at http://127.0.0.1:8003")
+    uvicorn.run(app, host="127.0.0.1", port=8003)
 

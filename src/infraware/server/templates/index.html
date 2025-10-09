@@ -5,33 +5,499 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InfraWare Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Animation Libraries -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <!-- Custom Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #1a1a1a;
-            --bg-medium: #2c2c2c;
-            --bg-light: #3a3a3a;
+            --bg-dark: #0f0f0f;
+            --bg-medium: #1a1a1a;
+            --bg-light: #252525;
             --accent-cyan: #00e5ff;
-            --text-light: #e0e0e0;
-            --text-dark: #b0b0b0;
-            --border-color: #444;
+            --accent-purple: #b155ff;
+            --accent-green: #00ff88;
+            --text-light: #f0f0f0;
+            --text-medium: #b0b0b0;
+            --text-dark: #888888;
+            --border-color: #333;
             --sidebar-width: 72px;
-            --sidebar-bg: linear-gradient(180deg, #232323, #1e1e1e);
-            --sidebar-active-bg: rgba(0,229,255,0.12);
+            --sidebar-bg: linear-gradient(180deg, #1a1a1a, #0f0f0f);
+            --sidebar-active-bg: rgba(0,229,255,0.15);
+            --glow-cyan: 0 0 20px rgba(0,229,255,0.3);
+            --glow-purple: 0 0 20px rgba(177,85,255,0.3);
         }
+
+        * {
+            scroll-behavior: smooth;
+        }
+
         body {
-            background-color: var(--bg-dark);
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1a2e 100%);
             color: var(--text-light);
             font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
         }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(0,229,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(177,85,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(0,255,136,0.05) 0%, transparent 50%);
+            z-index: -1;
+            animation: backgroundFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes backgroundFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(0.5deg); }
+            66% { transform: translate(-20px, 20px) rotate(-0.5deg); }
+        }
+
+        /* Sidebar Enhancements */
         .sidebar {
             background: var(--sidebar-bg);
             width: var(--sidebar-width);
             min-width: var(--sidebar-width);
-            border-right: 1px solid rgba(255,255,255,0.03);
-            box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+            border-right: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 
+                0 0 30px rgba(0,0,0,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.1);
             padding-top: 28px;
+            backdrop-filter: blur(10px);
+            position: relative;
         }
-        .main-content { background-color: var(--bg-dark); }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple), var(--accent-green));
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { opacity: 0.7; transform: scaleX(1); }
+            50% { opacity: 1; transform: scaleX(1.05); }
+        }
+
+        /* Card Animations */
+        .card {
+            background: linear-gradient(145deg, var(--bg-medium), var(--bg-light));
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 
+                0 4px 20px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(0,229,255,0.1), 
+                transparent);
+            transition: left 0.5s;
+        }
+
+        .card:hover::before {
+            left: 100%;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 8px 30px rgba(0,0,0,0.4),
+                0 0 20px rgba(0,229,255,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.15);
+            border-color: rgba(0,229,255,0.3);
+        }
+
+        /* Button Enhancements */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), #00b8d4);
+            color: var(--bg-dark);
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 12px 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0,229,255,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,229,255,0.4);
+            background: linear-gradient(135deg, #00f3ff, var(--accent-cyan));
+        }
+
+        /* File Input Enhancements */
+        .file-input-label {
+            background: linear-gradient(145deg, var(--bg-light), var(--bg-medium));
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-input-label::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(0,229,255,0.1), transparent);
+            transition: all 0.3s;
+            transform: translate(-50%, -50%);
+        }
+
+        .file-input-label:hover::before {
+            width: 200%;
+            height: 200%;
+        }
+
+        .file-input-label:hover {
+            border-color: var(--accent-cyan);
+            transform: scale(1.02);
+            box-shadow: var(--glow-cyan);
+        }
+
+        /* Result Animations */
+        .result-card {
+            background: linear-gradient(145deg, var(--bg-medium), var(--bg-light));
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Severity Badge Enhancements */
+        .severity-critical { 
+            color: #ff5555; 
+            text-shadow: 0 0 10px rgba(255,85,85,0.5);
+            animation: pulse 2s infinite;
+        }
+        .severity-high { 
+            color: #ffaa55; 
+            text-shadow: 0 0 10px rgba(255,170,85,0.5);
+        }
+        .severity-medium { 
+            color: #ffff55; 
+            text-shadow: 0 0 10px rgba(255,255,85,0.5);
+        }
+        .severity-low { 
+            color: #55aaff; 
+            text-shadow: 0 0 10px rgba(85,170,255,0.5);
+        }
+        .severity-info { 
+            color: #aaaaaa; 
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Form Enhancements */
+        .form-input, .form-select {
+            background: linear-gradient(145deg, var(--bg-light), var(--bg-medium));
+            border: 1px solid var(--border-color);
+            color: var(--text-light);
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .form-input:focus, .form-select:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+            outline: none;
+        }
+
+        /* InfraWare Custom Loading Animation */
+        .infraware-loader {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+        }
+
+        .infraware-loader .letter {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: bold;
+            font-size: 16px;
+            color: var(--accent-cyan);
+            text-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .infraware-loader .letter.i1 {
+            top: 10px;
+            left: 10px;
+            animation: letterGlow 2s ease-in-out infinite;
+        }
+
+        .infraware-loader .letter.w {
+            top: 10px;
+            left: 35px;
+            animation: letterGlow 2s ease-in-out 0.2s infinite;
+        }
+
+        .infraware-loader .letter.i2 {
+            top: 35px;
+            left: 10px;
+            animation: letterGlow 2s ease-in-out 0.4s infinite;
+        }
+
+        .infraware-loader .letter.w2 {
+            top: 35px;
+            left: 35px;
+            animation: letterGlow 2s ease-in-out 0.6s infinite;
+        }
+
+        .infraware-loader::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 70px;
+            height: 70px;
+            border: 2px solid rgba(0,229,255,0.2);
+            border-top: 2px solid var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 3s linear infinite;
+            transform: translate(-50%, -50%);
+        }
+
+        .infraware-loader::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            border: 2px solid rgba(177,85,255,0.2);
+            border-bottom: 2px solid var(--accent-purple);
+            border-radius: 50%;
+            animation: spin 2s linear infinite reverse;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes letterGlow {
+            0%, 100% { 
+                opacity: 0.4; 
+                transform: scale(1);
+                text-shadow: 0 0 5px var(--accent-cyan);
+            }
+            50% { 
+                opacity: 1; 
+                transform: scale(1.2);
+                text-shadow: 0 0 20px var(--accent-cyan);
+            }
+        }
+
+        /* Simplified loader for better performance */
+        .simple-loader {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0,229,255,0.2);
+            border-top: 3px solid var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        /* Scroll Reveal Classes */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .slide-in-left {
+            opacity: 0;
+            transform: translateX(-50px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide-in-left.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .slide-in-right {
+            opacity: 0;
+            transform: translateX(50px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide-in-right.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .scale-in {
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .scale-in.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Navigation Icons Enhancement */
+        .nav-icon {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 0 5px rgba(0,229,255,0));
+        }
+
+        .nav-icon:hover {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 10px rgba(0,229,255,0.5));
+        }
+
+        .nav-icon.active {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 15px rgba(0,229,255,0.8));
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #00f3ff, #c766ff);
+        }
+
+        /* Typing Animation for Headers */
+        .typing-text {
+            overflow: hidden;
+            border-right: 2px solid var(--accent-cyan);
+            white-space: nowrap;
+            animation: typing 3s steps(30, end), blink-caret 0.75s step-end infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: var(--accent-cyan); }
+        }
+
+        /* Floating Particles Effect */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+            opacity: 0.3;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.3;
+            }
+            90% {
+                opacity: 0.3;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Enhanced Main Content */
+        .main-content { 
+            background: transparent;
+            min-height: 100vh;
+        }
     .card { background-color: var(--bg-medium); border: 1px solid var(--border-color); }
         .btn-primary { background-color: var(--accent-cyan); color: var(--bg-dark); font-weight: bold; transition: background-color 0.3s; }
         .btn-primary:hover { background-color: #00b8d4; }
@@ -78,52 +544,43 @@
         .sidebar nav svg { width:20px; height:20px; }
         /* keep text items inside larger panels for labels */
         .sidebar .label-hidden { display: none; }
-        .loader {
-            border: 4px solid var(--bg-light);
-            border-top: 4px solid var(--accent-cyan);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body class="flex h-screen">
+    
+    <!-- Floating Particles Background -->
+    <div class="particles" id="particles"></div>
 
     <!-- Sidebar -->
-    <aside class="sidebar flex flex-col items-center">
+    <aside class="sidebar flex flex-col items-center slide-in-left">
         <div class="brand">
             <div class="logo">IW</div>
             <div class="label-hidden">InfraWare</div>
         </div>
         <nav>
             <ul>
-                <li>
-                    <a id="nav-scan" href="#" class="active" title="Scan File">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2zM9 22V12h6v10"></path></svg>
+                <li data-aos="fade-up" data-aos-delay="100">
+                    <a id="nav-scan" href="#" class="nav-icon active" title="Security Scan">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
                     </a>
                 </li>
-                <li>
-                    <a id="nav-cost" href="#" title="Cost Analysis">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V4m0 16v-4"></path></svg>
+                <li data-aos="fade-up" data-aos-delay="200">
+                    <a id="nav-cost" href="#" class="nav-icon" title="Cost Analysis">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V4m0 16v-4"></path>
+                        </svg>
                     </a>
                 </li>
-                <li>
-                    <a id="nav-cve" href="#" title="CVE Database">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3"></path></svg>
-                    </a>
-                </li>
-                <li>
-                    <a id="nav-container" href="#" title="Container Scan">
-                        <!-- simple container / docker icon -->
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18v4H3V7zm0 6h18v4H3v-4zM7 3h10v2H7V3z"></path></svg>
+                <li data-aos="fade-up" data-aos-delay="300">
+                    <a id="nav-cve" href="#" class="nav-icon" title="CVE Database">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
                     </a>
                 </li>
             </ul>
@@ -131,41 +588,56 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="main-content flex-1 p-8 overflow-y-auto">
-        <h2 id="page-title" class="text-3xl font-bold mb-6">Security Scan</h2>
+    <main class="main-content flex-1 p-8 overflow-y-auto slide-in-right">
+        <h2 id="page-title" class="text-3xl font-bold mb-6 typing-text" data-aos="fade-down">🛡️ InfraWare Security Dashboard</h2>
 
     <div id="scan-panel" class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <!-- Left Column: Inputs -->
             <div>
                 <!-- Plan File Upload -->
-                <div class="card p-6 rounded-lg mb-8">
-                    <h3 class="text-xl font-semibold mb-4">Upload Terraform Plan</h3>
-                    <p class="text-text-dark mb-4 text-sm">Select your `tfplan.json` file to begin a security scan.</p>
+                <div class="card p-6 rounded-lg mb-8 fade-in" data-aos="fade-up" data-aos-delay="100">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        Upload Infrastructure Plan
+                    </h3>
+                    <p class="text-text-dark mb-4 text-sm">Upload your infrastructure files (.tf, .json, .yaml, .yml, .hcl) for comprehensive security scanning and cost analysis.</p>
                     <label for="plan-file" class="file-input-label flex justify-center items-center w-full h-24 rounded-lg cursor-pointer">
                         <div class="text-center">
                             <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-4-4V7a4 4 0 014-4h5l4 4v11a2 2 0 01-2 2H9a2 2 0 01-2-2v-1z"></path></svg>
-                            <p class="mt-1 text-sm text-gray-400"><span id="plan-file-name">Choose File</span></p>
+                            <p class="mt-1 text-sm text-gray-400"><span id="plan-file-name">Choose File (.tf, .json, .yaml, .yml, .hcl)</span></p>
                         </div>
                     </label>
-                    <input type="file" id="plan-file" class="hidden" accept=".json">
+                    <input type="file" id="plan-file" class="hidden" accept=".json,.tf,.yaml,.yml,.hcl">
                 </div>
 
                 <!-- Custom Rules Upload -->
-                <div class="card p-6 rounded-lg mb-8">
-                    <h3 class="text-xl font-semibold mb-4">Upload Custom Rules (Optional)</h3>
-                     <p class="text-text-dark mb-4 text-sm">Provide a `.yaml` file containing your custom rules.</p>
+                <div class="card p-6 rounded-lg mb-8 fade-in" data-aos="fade-up" data-aos-delay="200">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-accent-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
+                        </svg>
+                        Custom Security Rules
+                    </h3>
+                     <p class="text-text-dark mb-4 text-sm">Extend scanning with your organization's security policies and custom rules.</p>
                     <label for="rules-file" class="file-input-label flex justify-center items-center w-full h-24 rounded-lg cursor-pointer">
                         <div class="text-center">
                             <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                            <p class="mt-1 text-sm text-gray-400"><span id="rules-file-name">Choose Rules File</span></p>
+                            <p class="mt-1 text-sm text-gray-400"><span id="rules-file-name">Choose Rules File (.yaml)</span></p>
                         </div>
                     </label>
                     <input type="file" id="rules-file" class="hidden" accept=".yaml,.yml">
                 </div>
 
                 <!-- Advanced Options -->
-                <div class="card p-6 rounded-lg mb-8">
-                    <h3 class="text-xl font-semibold mb-4">Advanced Scan Options</h3>
+                <div class="card p-6 rounded-lg mb-8 scale-in" data-aos="fade-up" data-aos-delay="300">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-accent-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
+                        </svg>
+                        Advanced Scan Configuration
+                    </h3>
                     <div class="space-y-4">
                         <div>
                             <label for="severity-filter" class="block text-sm font-medium text-text-light mb-1">Filter by Severity</label>
@@ -204,8 +676,12 @@
                         <p class="mt-2">Scan results will be displayed here.</p>
                     </div>
                 </div>
-                <div id="loader" class="hidden flex items-center justify-center h-full">
-                    <div class="loader"></div>
+                <div id="loader" class="hidden flex flex-col items-center justify-center h-full">
+                    <div class="infraware-loader">
+                        <div class="letter i1">I</div>
+                        <div class="letter w">W</div>
+                    </div>
+                    <p class="mt-4 text-accent-cyan font-medium">Analyzing Infrastructure...</p>
                 </div>
                 <div id="error-box" class="error-box p-4 rounded-lg hidden"></div>
                 <div id="results-content" class="hidden space-y-4"></div>
@@ -247,7 +723,10 @@
                         <p class="mt-2">CVE results will be shown here.</p>
                     </div>
                 </div>
-                <div id="cve-loader" class="hidden flex items-center justify-center h-full"><div class="loader"></div></div>
+                <div id="cve-loader" class="hidden flex flex-col items-center justify-center h-full">
+                    <div class="simple-loader"></div>
+                    <p class="mt-4 text-accent-cyan font-medium">Searching CVE Database...</p>
+                </div>
                 <div id="cve-error-box" class="error-box p-4 rounded-lg hidden"></div>
                 <div id="cve-results-content" class="hidden space-y-4"></div>
             </div>
@@ -292,7 +771,10 @@
                         <p class="mt-2">Cost analysis results will be displayed here.</p>
                     </div>
                 </div>
-                <div id="cost-loader" class="hidden flex items-center justify-center h-full"><div class="loader"></div></div>
+                <div id="cost-loader" class="hidden flex flex-col items-center justify-center h-full">
+                    <div class="simple-loader"></div>
+                    <p class="mt-4 text-accent-cyan font-medium">Calculating Costs...</p>
+                </div>
                 <div id="cost-error-box" class="error-box p-4 rounded-lg hidden"></div>
                 <div id="cost-results-content" class="hidden space-y-4"></div>
             </div>
@@ -922,6 +1404,221 @@
                 showContainerError(err.message);
             }
         });
+
+        // === ANIMATION AND EFFECTS INITIALIZATION === 
+        
+        // Initialize AOS (Animate On Scroll) - Optimized for performance
+        AOS.init({
+            duration: 600,
+            once: true, // Only animate once for better performance
+            mirror: false, // Disable mirror for better performance
+            offset: 50,
+            disable: 'mobile' // Disable on mobile for performance
+        });
+
+        // Optimized Floating Particles Animation
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 15; // Reduced from 50 to 15 for better performance
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // Random properties
+                const size = Math.random() * 2 + 1; // Smaller particles
+                const startPositionX = Math.random() * 100;
+                const animationDuration = Math.random() * 20 + 15; // Slower for smoother performance
+                const delay = Math.random() * 10;
+                
+                particle.style.left = startPositionX + '%';
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.animationDuration = animationDuration + 's';
+                particle.style.animationDelay = delay + 's';
+                
+                // Fewer colors for better performance
+                const colors = ['#00e5ff', '#b155ff'];
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.opacity = '0.4'; // Lower opacity for subtler effect
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Scroll-triggered animations for elements without AOS
+        function initScrollAnimations() {
+            const elements = document.querySelectorAll('.fade-in, .slide-in-left, .slide-in-right, .scale-in');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            });
+
+            elements.forEach(element => {
+                observer.observe(element);
+            });
+        }
+
+        // Optimized typing animation for page titles
+        function initTypingAnimation() {
+            const typingElements = document.querySelectorAll('.typing-text');
+            typingElements.forEach(element => {
+                const text = element.textContent;
+                element.textContent = '';
+                element.style.borderRight = '2px solid var(--accent-cyan)';
+                
+                let i = 0;
+                const typeWriter = () => {
+                    if (i < text.length) {
+                        element.textContent += text.charAt(i);
+                        i++;
+                        setTimeout(typeWriter, 80); // Faster typing for quicker load
+                    } else {
+                        // Remove cursor after typing is complete
+                        setTimeout(() => {
+                            element.style.borderRight = 'none';
+                        }, 500); // Shorter delay
+                    }
+                };
+                
+                // Start typing immediately (no delay)
+                typeWriter();
+            });
+        }
+
+        // Enhanced button hover effects
+        function initButtonEffects() {
+            const buttons = document.querySelectorAll('.btn-primary');
+            buttons.forEach(button => {
+                button.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-3px) scale(1.05)';
+                });
+                
+                button.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+        }
+
+        // Navigation icon effects
+        function initNavigationEffects() {
+            const navIcons = document.querySelectorAll('.nav-icon');
+            navIcons.forEach(icon => {
+                icon.addEventListener('click', function() {
+                    // Remove active class from all icons
+                    navIcons.forEach(i => i.classList.remove('active'));
+                    // Add active class to clicked icon
+                    this.classList.add('active');
+                    
+                    // Add click animation
+                    this.style.transform = 'scale(0.9)';
+                    setTimeout(() => {
+                        this.style.transform = 'scale(1.1)';
+                    }, 150);
+                });
+            });
+        }
+
+        // Smooth scrolling for internal links
+        function initSmoothScrolling() {
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        }
+
+        // Enhanced card hover effects
+        function initCardEffects() {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px) scale(1.02)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+        }
+
+        // Parallax effect for background elements
+        function initParallaxEffect() {
+            window.addEventListener('scroll', () => {
+                const scrolled = window.pageYOffset;
+                const parallaxElements = document.querySelectorAll('.particles');
+                
+                parallaxElements.forEach(element => {
+                    const speed = 0.5;
+                    element.style.transform = `translateY(${scrolled * speed}px)`;
+                });
+            });
+        }
+
+        // Dynamic gradient background animation
+        function initDynamicBackground() {
+            const body = document.body;
+            let hue = 0;
+            
+            setInterval(() => {
+                hue += 1;
+                if (hue >= 360) hue = 0;
+                
+                body.style.background = `
+                    linear-gradient(135deg, 
+                        hsl(${hue}, 20%, 8%) 0%, 
+                        hsl(${(hue + 60) % 360}, 25%, 12%) 100%)
+                `;
+            }, 100);
+        }
+
+        // Initialize all animations and effects
+        function initializeAnimations() {
+            createParticles();
+            initScrollAnimations();
+            initTypingAnimation();
+            initButtonEffects();
+            initNavigationEffects();
+            initSmoothScrolling();
+            initCardEffects();
+            initParallaxEffect();
+            
+            // Optional: Uncomment for dynamic background
+            // initDynamicBackground();
+        }
+
+        // Wait for DOM to be fully loaded before initializing animations
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeAnimations);
+        } else {
+            initializeAnimations();
+        }
+
+        // Refresh animations when content changes (for dynamic content)
+        const contentObserver = new MutationObserver(() => {
+            AOS.refresh();
+            initScrollAnimations();
+        });
+
+        contentObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
     </script>
 
 </body>

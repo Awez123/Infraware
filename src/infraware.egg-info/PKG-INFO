@@ -23,7 +23,7 @@ Dynamic: license-file
 
 
 
-**InfraWare** is an enterprise-grade Infrastructure as Code (IaC) security scanner with integrated CVE database and container security capabilities. It combines infrastructure vulnerability detection with cost analysis to provide comprehensive cloud security insights.**InfraWare** is an enterprise-grade Infrastructure as Code (IaC) security scanner with integrated CVE database and container security capabilities. It combines infrastructure vulnerability detection with cost analysis to provide comprehensive cloud security insights.
+**InfraWare** is an enterprise-grade Infrastructure as Code (IaC) security scanner with integrated CVE database. It combines infrastructure vulnerability detection with cost analysis to provide comprehensive cloud security insights.
 
 
 
@@ -102,44 +102,26 @@ infraware cve-statsinfraware cve-stats
 - **Compliance Mapping**: CIS Controls and industry standards### 🔍 Infrastructure Security### 🔍 Infrastructure Security
 
 - **35+ AWS Security Rules**: Comprehensive coverage across RDS, EC2, IAM, Lambda, ELB, CloudTrail, KMS
-
-- **Multi-Cloud IaC Scanning**: Terraform, CloudFormation, Kubernetes YAML- **Multi-Cloud IaC Scanning**: Terraform, CloudFormation, Kubernetes YAML
-
-### 🐳 Container Security
-
-- **Dockerfile Analysis**: Security best practices and vulnerability detection- **CVE Integration**: 2,000+ vulnerabilities with real-time updates- **CVE Integration**: 2,000+ vulnerabilities with real-time updates
-
-- **Container Image Scanning**: Layer-by-layer vulnerability analysis
-
-- **Runtime Security**: Running container assessment- **Risk Scoring**: Advanced severity assessment and scoring- **Risk Scoring**: Advanced severity assessment and scoring
-
+- **Multi-Cloud IaC Scanning**: Terraform, CloudFormation, Kubernetes YAML
+- **CVE Integration**: 10,000+ vulnerabilities with real-time updates
+- **Risk Scoring**: Advanced severity assessment and scoring
 - **Secret Detection**: Hardcoded credentials and sensitive data identification
-
-- **Compliance Mapping**: CIS Controls and industry standards- **Compliance Mapping**: CIS Controls and industry standards
+- **Compliance Mapping**: CIS Controls and industry standards
 
 ### 💰 Cost Analysis
 
 - **Multi-Cloud Cost Estimation**: AWS, Azure, GCP pricing
-
 - **Resource Optimization**: Cost-aware security recommendations
-
-- **Regional Pricing**: Location-specific cost calculations### 🐳 Container Security### 🐳 Container Security
-
+- **Regional Pricing**: Location-specific cost calculations
 - **Usage-Based Modeling**: Flexible time-based cost projections
-
-- **Dockerfile Analysis**: Security best practices and vulnerability detection- **Dockerfile Analysis**: Security best practices and vulnerability detection
 
 ### 🔄 Real-Time Intelligence
 
-- **CVE Database**: Auto-updating vulnerability intelligence from NVD and GitHub- **Container Image Scanning**: Layer-by-layer vulnerability analysis- **Container Image Scanning**: Layer-by-layer vulnerability analysis
-
+- **CVE Database**: Auto-updating vulnerability intelligence from NVD and GitHub
 - **Threat Correlation**: Infrastructure resources mapped to known vulnerabilities
+- **Security Scoring**: Dynamic risk assessment based on current threat landscape
 
-- **Security Scoring**: Dynamic risk assessment based on current threat landscape- **Runtime Security**: Running container assessment- **Runtime Security**: Running container assessment
-
-
-
-## 📋 Command Reference- **Secret Detection**: Hardcoded credentials and sensitive data identification- **Secret Detection**: Hardcoded credentials and sensitive data identification
+## 📋 Command Reference
 
 
 
