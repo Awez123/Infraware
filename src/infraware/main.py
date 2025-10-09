@@ -10,9 +10,9 @@ from typing import List, Tuple
 
 # --- Shared constants -----------------------------------------------------
 CLI_HELP = (
-    "🛡️ InfraWare v2.0 - Enterprise Infrastructure Security & Cost Platform\n\n"
+    "🛡️ InfraWare v2.0 - Enterprise Infrastructure Security & Cost Platform\n"
     "Comprehensive security scanner with 35+ AWS rules, 10K+ CVE database, \n"
-    "container security, secret detection, and multi-cloud cost analysis.\n\n"
+    "container security, secret detection, and multi-cloud cost analysis.\n"
     "Quick Examples:\n"
     "  infraware scan plan.json                  # Scan infrastructure\n"
     "  infraware comprehensive ./project         # Full security scan\n"
@@ -68,9 +68,6 @@ from infraware.commands.cve_update import cve_update_cmd
 from infraware.commands.cve_bulk_download import cve_bulk_download_cmd
 from infraware.commands.cve_search import cve_search_cmd
 from infraware.commands.cve_stats import cve_stats_cmd
-from infraware.commands.container_scan import container_scan_cmd
-from infraware.commands.dockerfile_scan import dockerfile_scan_cmd
-from infraware.commands.container_runtime import container_runtime_cmd
 
 
 def create_app(help_text: str = CLI_HELP) -> typer.Typer:
@@ -85,9 +82,6 @@ def create_app(help_text: str = CLI_HELP) -> typer.Typer:
     app.command("cve-bulk-download")(cve_bulk_download_cmd)
     app.command("cve-search")(cve_search_cmd)
     app.command("cve-stats")(cve_stats_cmd)
-    app.command("container-scan")(container_scan_cmd)
-    app.command("dockerfile-scan")(dockerfile_scan_cmd)
-    app.command("container-runtime")(container_runtime_cmd)
 
     return app
 
