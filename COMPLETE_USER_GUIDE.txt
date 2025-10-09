@@ -1,0 +1,736 @@
+================================================================================
+                    INFRAWARE - COMPLETE USER GUIDE
+================================================================================
+
+TABLE OF CONTENTS:
+1. INSTALLATION
+2. GETTING STARTED
+3. SECURITY SCANNING
+4. COST ANALYSIS
+5. CVE MANAGEMENT
+6. WEB INTERFACE
+7. CONFIGURATION
+8. CI/CD INTEGRATION
+9. TROUBLESHOOTING
+10. ADVANCED USAGE
+
+================================================================================
+1. INSTALLATION
+================================================================================
+
+METHOD 1: PyPI Installation (Recommended)
+------------------------------------------
+Prerequisites: Python 3.8+
+
+# Install InfraWare
+pip install infraware
+
+# Verify installation
+infraware --version
+infraware welcome
+
+METHOD 2: From Source
+---------------------
+# Clone repository
+git clone https://github.com/Awez123/Infraware.git
+cd Infraware
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Install InfraWare
+pip install -e .
+
+# Verify installation
+infraware --help
+
+METHOD 3: Docker
+----------------
+# Quick scan with Docker
+docker run --rm -v $(pwd):/workspace awez123/infraware scan /workspace/terraform.json
+
+# Interactive mode
+docker run -it --rm -v $(pwd):/workspace awez123/infraware
+
+METHOD 4: Installation Scripts
+------------------------------
+# Linux/macOS
+curl -fsSL https://raw.githubusercontent.com/Awez123/Infraware/master/install.sh | bash
+
+# Windows PowerShell
+iwr -useb https://raw.githubusercontent.com/Awez123/Infraware/master/install.ps1 | iex
+
+VERIFY INSTALLATION:
+-------------------
+infraware welcome
+# Should display welcome screen with ASCII art and feature overview
+
+================================================================================
+2. GETTING STARTED
+================================================================================
+
+BASIC COMMANDS:
+--------------
+# Display welcome and feature overview
+infraware welcome
+
+# Show all available commands
+infraware --help
+
+# Show help for specific command
+infraware scan --help
+infraware cost-analysis --help
+infraware cve --help
+infraware server --help
+
+FIRST SCAN:
+----------
+# Prepare your Terraform plan (if using Terraform)
+terraform plan -out=plan.out
+terraform show -json plan.out > plan.json
+
+# Run basic security scan
+infraware scan plan.json
+
+# Run cost analysis
+infraware cost-analysis analyze plan.json
+
+================================================================================
+3. SECURITY SCANNING
+================================================================================
+
+BASIC SCANNING:
+--------------
+# Scan Terraform JSON plan
+infraware scan terraform-plan.json
+
+# Scan with comprehensive analysis
+infraware scan terraform-plan.json --comprehensive
+
+# Scan with secret detection
+infraware scan terraform-plan.json --secrets
+
+ADVANCED SCANNING OPTIONS:
+-------------------------
+# Filter by severity level
+infraware scan terraform-plan.json --severity HIGH
+infraware scan terraform-plan.json --severity CRITICAL
+infraware scan terraform-plan.json --severity MEDIUM
+
+# Filter by minimum severity score (0.0-10.0)
+infraware scan terraform-plan.json --min-severity 7.0
+
+# Output in different formats
+infraware scan terraform-plan.json --format json
+infraware scan terraform-plan.json --format csv
+infraware scan terraform-plan.json --format table
+
+# Use custom security rules
+infraware scan terraform-plan.json --rules-dir ./custom-rules/
+
+# Use ignore patterns (baseline exceptions)
+infraware scan terraform-plan.json --ignore-dir ./ignore-patterns/
+
+# Include detailed remediation guidance
+infraware scan terraform-plan.json --remediation
+
+# Quick scan mode (faster, less detailed)
+infraware scan terraform-plan.json --quick
+
+# Limit maximum files to scan
+infraware scan terraform-plan.json --max-files 50
+
+# Filter by specific CVE ID
+infraware scan terraform-plan.json --cve CVE-2023-12345
+
+# Filter by tags
+infraware scan terraform-plan.json --tags encryption,s3,rds
+
+DIRECTORY SCANNING:
+------------------
+# Preview scannable files in directory
+infraware preview ./infrastructure/
+
+# Scan all files in directory
+infraware scan ./infrastructure/ --quick
+
+SUPPORTED FILE FORMATS:
+----------------------
+- .json (Terraform plans, CloudFormation)
+- .tf (Terraform configuration files)
+- .yaml/.yml (CloudFormation, Kubernetes)
+- .hcl (Terraform configuration)
+
+EXAMPLE SCAN OUTPUTS:
+--------------------
+# Basic scan output shows:
+- Total vulnerabilities found
+- Risk score (0-10)
+- Severity distribution (Critical, High, Medium, Low, Info)
+- Detailed findings with resource information
+- CVE correlations where applicable
+
+================================================================================
+4. COST ANALYSIS
+================================================================================
+
+BASIC COST ANALYSIS:
+-------------------
+# Analyze infrastructure costs with real-time pricing
+infraware cost-analysis analyze terraform-plan.json --realtime
+
+# Analyze costs for specific region
+infraware cost-analysis analyze terraform-plan.json --region us-west-2
+infraware cost-analysis analyze terraform-plan.json --region eu-west-1
+infraware cost-analysis analyze terraform-plan.json --region ap-southeast-1
+
+# Analyze costs for specific time period
+infraware cost-analysis analyze terraform-plan.json --hours 720  # 30 days
+infraware cost-analysis analyze terraform-plan.json --hours 8760 # 1 year
+
+ADVANCED COST ANALYSIS:
+----------------------
+# Get detailed cost breakdown
+infraware cost-analysis analyze terraform-plan.json --breakdown
+
+# Get cost optimization recommendations
+infraware cost-analysis analyze terraform-plan.json --optimize
+
+# Compare costs across multiple cloud providers
+infraware cost-analysis analyze terraform-plan.json --compare
+
+# Export cost analysis to different formats
+infraware cost-analysis analyze terraform-plan.json --format json > costs.json
+infraware cost-analysis analyze terraform-plan.json --format csv > costs.csv
+
+# Analyze with confidence threshold
+infraware cost-analysis analyze terraform-plan.json --min-confidence 8.0
+
+COST ANALYSIS OUTPUT:
+--------------------
+The cost analysis provides:
+- Total monthly cost estimate
+- Per-resource cost breakdown
+- Regional pricing variations
+- Confidence scores for estimates
+- Free tier resource identification
+- Cost optimization recommendations
+
+SUPPORTED CLOUD PROVIDERS:
+--------------------------
+- AWS (Amazon Web Services)
+- Azure (Microsoft Azure)  
+- GCP (Google Cloud Platform)
+
+EXAMPLE COST OUTPUT:
+-------------------
+Total Monthly Cost: $105.85
+Resource Count: 8
+Region: us-east-1
+
+Resource Breakdown:
+- aws_vpc (main): $0.00 (free)
+- aws_nat_gateway (main): $32.85
+- aws_vpc_endpoint (s3): $36.50
+- aws_vpc_endpoint (dynamodb): $36.50
+
+================================================================================
+5. CVE MANAGEMENT
+================================================================================
+
+CVE DATABASE OPERATIONS:
+-----------------------
+# Download/update CVE database
+infraware cve download
+
+# Check CVE database statistics
+infraware cve stats
+
+# Update existing CVE database
+infraware cve update
+
+# Show detailed CVE statistics
+infraware cve stats --verbose
+
+CVE SEARCH AND RESEARCH:
+-----------------------
+# Search for CVEs by keyword
+infraware cve search "S3"
+infraware cve search "RDS encryption"
+infraware cve search "Kubernetes"
+
+# Search with severity filter
+infraware cve search "apache" --severity HIGH
+infraware cve search "nginx" --severity CRITICAL
+
+# Limit search results
+infraware cve search "docker" --limit 10
+
+# Research specific CVE ID
+infraware cve research CVE-2023-12345
+infraware cve research CVE-2022-25169
+
+# View CVE trends
+infraware cve trends
+
+CVE DATABASE INFORMATION:
+------------------------
+The CVE database includes:
+- 10,000+ vulnerability records
+- Real-time updates from NVD and GitHub
+- Severity classifications (Critical, High, Medium, Low)
+- CVSS scores and impact assessments
+- Remediation guidance
+- Infrastructure correlation mapping
+
+EXAMPLE CVE OUTPUT:
+------------------
+CVE Database Statistics:
+Total CVEs: 12,547
+Recent CVEs (30 days): 234
+Database Size: 45.2 MB
+Severity Distribution:
+- Critical: 1,854 (15%)
+- High: 3,137 (25%) 
+- Medium: 5,646 (45%)
+- Low: 1,910 (15%)
+
+================================================================================
+6. WEB INTERFACE
+================================================================================
+
+SERVER COMMANDS:
+---------------
+# Start web dashboard
+infraware server start
+
+# Start server on custom port
+infraware server start --port 8080
+
+# Start in API-only mode
+infraware server api
+
+# Check server status
+infraware server status
+
+# Stop server
+infraware server stop
+
+WEB INTERFACE FEATURES:
+----------------------
+- Upload and scan infrastructure files
+- Real-time cost analysis dashboard
+- CVE database search interface
+- Interactive security findings explorer
+- Export capabilities (JSON, CSV, PDF)
+- Team collaboration features
+
+API ENDPOINTS:
+-------------
+POST /api/scan - Security scanning
+POST /api/cost - Cost analysis  
+GET /api/cve - CVE operations
+GET /api/status - Health check
+
+ACCESSING WEB INTERFACE:
+-----------------------
+After starting server:
+http://localhost:8000 (default)
+http://localhost:8080 (custom port)
+
+================================================================================
+7. CONFIGURATION
+================================================================================
+
+ENVIRONMENT VARIABLES:
+---------------------
+# Database location
+export INFRAWARE_DB_PATH=~/.infraware/cve_database.db
+
+# Custom rules directory
+export INFRAWARE_RULES_DIR=~/.infraware/rules/
+
+# Ignore patterns directory  
+export INFRAWARE_IGNORE_DIR=~/.infraware/ignores/
+
+# Cache directory
+export INFRAWARE_CACHE_DIR=~/.infraware/cache/
+
+# API Keys (optional, for enhanced pricing)
+export INFRAWARE_AWS_ACCESS_KEY=your_aws_key
+export INFRAWARE_AZURE_SUBSCRIPTION_ID=your_azure_id
+export INFRAWARE_GCP_PROJECT_ID=your_gcp_project
+
+CONFIGURATION FILE:
+------------------
+Create ~/.infraware/config.yaml:
+
+database:
+  path: "~/.infraware/cve_database.db"
+  auto_update: true
+
+pricing:
+  cache_ttl: 3600
+  fallback_enabled: true
+  regions:
+    - us-east-1
+    - us-west-2
+    - eu-west-1
+
+scanning:
+  default_severity: "MEDIUM"
+  max_files: 100
+  timeout: 300
+
+rules:
+  custom_dir: "~/.infraware/rules/"
+  ignore_dir: "~/.infraware/ignores/"
+
+CUSTOM SECURITY RULES:
+---------------------
+Create custom rule file (rules/custom-s3.yaml):
+
+rules:
+  - id: CUSTOM-S3-001
+    title: "S3 Bucket Custom Policy"
+    severity: HIGH
+    resource_type: aws_s3_bucket
+    condition: bucket_policy_missing
+    description: "S3 bucket missing security policy"
+    remediation: "Add bucket policy with least privilege"
+
+IGNORE PATTERNS:
+---------------
+Create ignore file (ignores/exceptions.yaml):
+
+ignore:
+  - resource_name: "public_website_bucket"
+    reason: "Intentionally public for website hosting"
+  - resource_name: "development_*"
+    reason: "Development resources, different security requirements"
+
+================================================================================
+8. CI/CD INTEGRATION
+================================================================================
+
+GITHUB ACTIONS:
+--------------
+Create .github/workflows/infraware.yml:
+
+name: InfraWare Security Scan
+on: [push, pull_request]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      - name: Install InfraWare
+        run: pip install infraware
+      
+      - name: Generate Terraform Plan
+        run: |
+          terraform init
+          terraform plan -out=plan.out
+          terraform show -json plan.out > plan.json
+      
+      - name: Security Scan
+        run: infraware scan plan.json --format json --severity HIGH
+      
+      - name: Cost Analysis
+        run: infraware cost-analysis analyze plan.json --realtime
+
+GITLAB CI:
+---------
+Create .gitlab-ci.yml:
+
+infraware_scan:
+  stage: security
+  image: python:3.9
+  script:
+    - pip install infraware
+    - terraform plan -out=plan.out
+    - terraform show -json plan.out > plan.json
+    - infraware scan plan.json --format json
+    - infraware cost-analysis analyze plan.json --breakdown
+  artifacts:
+    reports:
+      junit: infraware-results.xml
+
+JENKINS PIPELINE:
+----------------
+pipeline {
+    agent any
+    stages {
+        stage('InfraWare Scan') {
+            steps {
+                sh 'pip install infraware'
+                sh 'terraform plan -out=plan.out'
+                sh 'terraform show -json plan.out > plan.json'
+                sh 'infraware scan plan.json --format json > scan-results.json'
+                sh 'infraware cost-analysis analyze plan.json --format json > cost-results.json'
+                archiveArtifacts artifacts: '*-results.json'
+            }
+        }
+    }
+}
+
+DOCKER CI/CD:
+------------
+# Use InfraWare Docker image in CI/CD
+docker run --rm -v $(pwd):/workspace \
+  awez123/infraware scan /workspace/terraform.json --format json
+
+================================================================================
+9. TROUBLESHOOTING
+================================================================================
+
+COMMON INSTALLATION ISSUES:
+--------------------------
+# Python version too old
+python --version  # Should be 3.8+
+pip install --upgrade pip
+
+# Permission issues (Linux/macOS)
+pip install --user infraware
+sudo chown -R $USER ~/.infraware/
+
+# Permission issues (Windows)
+icacls "%USERPROFILE%\.infraware" /grant "%USERNAME%":F /T
+
+# Force reinstall
+pip install --force-reinstall infraware
+
+COMMON USAGE ISSUES:
+-------------------
+# File not found
+infraware scan ./terraform.json
+# Ensure file exists and path is correct
+
+# Network connectivity issues
+infraware cve download --debug
+# Check internet connection for CVE updates
+
+# Invalid file format
+infraware scan terraform.tf
+# Use JSON format: terraform show -json plan.out > plan.json
+
+# Memory issues with large files
+infraware scan large-plan.json --quick --max-files 50
+# Use quick mode and limit file processing
+
+DEBUG MODE:
+----------
+# Enable verbose logging
+infraware --debug scan terraform.json
+infraware --debug cve download
+infraware --debug cost-analysis analyze terraform.json
+
+# Check configuration
+infraware config validate
+
+# Verify file format
+file terraform.json  # Should show JSON
+
+# Check database
+infraware cve stats --verbose
+
+GETTING HELP:
+------------
+# Command help
+infraware --help
+infraware scan --help
+infraware cost-analysis analyze --help
+
+# Version information
+infraware --version
+
+# Community support
+GitHub Issues: https://github.com/Awez123/Infraware/issues
+Discussions: https://github.com/Awez123/Infraware/discussions
+
+================================================================================
+10. ADVANCED USAGE
+================================================================================
+
+BATCH OPERATIONS:
+----------------
+# Scan multiple files
+for file in *.json; do
+  infraware scan "$file" --format json > "${file%.json}-results.json"
+done
+
+# Cost analysis for multiple regions
+for region in us-east-1 us-west-2 eu-west-1; do
+  infraware cost-analysis analyze terraform.json --region $region --format csv >> costs-all-regions.csv
+done
+
+AUTOMATION SCRIPTS:
+------------------
+#!/bin/bash
+# Security and cost analysis automation script
+
+PLAN_FILE="terraform-plan.json"
+RESULTS_DIR="infraware-results"
+
+# Create results directory
+mkdir -p $RESULTS_DIR
+
+# Generate Terraform plan
+terraform plan -out=plan.out
+terraform show -json plan.out > $PLAN_FILE
+
+# Security scan with different severity levels
+infraware scan $PLAN_FILE --severity CRITICAL --format json > $RESULTS_DIR/critical-issues.json
+infraware scan $PLAN_FILE --severity HIGH --format json > $RESULTS_DIR/high-issues.json
+infraware scan $PLAN_FILE --format json > $RESULTS_DIR/all-issues.json
+
+# Cost analysis
+infraware cost-analysis analyze $PLAN_FILE --realtime --format json > $RESULTS_DIR/costs.json
+infraware cost-analysis analyze $PLAN_FILE --breakdown --format csv > $RESULTS_DIR/cost-breakdown.csv
+
+# CVE correlation
+infraware scan $PLAN_FILE --format json | jq '.vulnerabilities[] | select(.references.cve | length > 0)' > $RESULTS_DIR/cve-findings.json
+
+echo "Analysis complete. Results in $RESULTS_DIR/"
+
+CUSTOM INTEGRATIONS:
+-------------------
+# Use with jq for JSON processing
+infraware scan terraform.json --format json | jq '.vulnerabilities[] | select(.severity == "HIGH")'
+
+# Filter specific resource types
+infraware scan terraform.json --format json | jq '.vulnerabilities[] | select(.resource.type == "aws_s3_bucket")'
+
+# Extract cost information
+infraware cost-analysis analyze terraform.json --format json | jq '.resources[] | select(.monthly_cost > 50)'
+
+PERFORMANCE OPTIMIZATION:
+-------------------------
+# For large infrastructures
+infraware scan large-plan.json --quick --max-files 100 --min-severity 5.0
+
+# Use caching for repeated scans
+export INFRAWARE_CACHE_DIR=/tmp/infraware-cache
+infraware scan terraform.json
+
+# Parallel processing for multiple files
+ls *.json | xargs -P 4 -I {} infraware scan {} --format json
+
+ENTERPRISE FEATURES:
+-------------------
+# Team configuration sharing
+git clone company/infraware-rules
+infraware scan terraform.json --rules-dir ./infraware-rules/
+
+# Centralized ignore patterns
+infraware scan terraform.json --ignore-dir /shared/infraware-ignores/
+
+# API integration
+curl -X POST http://infraware-server:8080/api/scan \
+  -H "Content-Type: application/json" \
+  -d @terraform.json
+
+================================================================================
+SUMMARY OF ALL COMMANDS
+================================================================================
+
+MAIN COMMANDS:
+infraware welcome                          # Display welcome screen
+infraware scan <file>                      # Security scanning
+infraware cost-analysis analyze <file>     # Cost analysis
+infraware cve <operation>                  # CVE management
+infraware server <operation>              # Web interface
+infraware preview <directory>             # Preview scannable files
+
+SCAN COMMAND FLAGS:
+--comprehensive                           # Full security analysis
+--secrets                                # Secret detection
+--severity <level>                       # Filter by severity (CRITICAL, HIGH, MEDIUM, LOW)
+--min-severity <score>                   # Filter by minimum score (0.0-10.0)
+--format <type>                          # Output format (json, csv, table)
+--rules-dir <path>                       # Custom rules directory
+--ignore-dir <path>                      # Ignore patterns directory
+--remediation                            # Include remediation guidance
+--quick                                  # Fast scan mode
+--max-files <number>                     # Maximum files to scan
+--cve <id>                              # Filter by CVE ID
+--tags <list>                           # Filter by tags
+
+COST-ANALYSIS FLAGS:
+--realtime                              # Real-time pricing
+--region <name>                         # Specific region
+--hours <number>                        # Time period in hours
+--breakdown                             # Detailed cost breakdown
+--optimize                              # Cost optimization recommendations
+--compare                               # Multi-cloud comparison
+--format <type>                         # Output format (json, csv, table)
+--min-confidence <score>                # Minimum confidence threshold
+
+CVE COMMANDS:
+infraware cve download                   # Download CVE database
+infraware cve update                     # Update CVE database
+infraware cve stats                      # Database statistics
+infraware cve search <query>             # Search vulnerabilities
+infraware cve research <cve-id>          # Research specific CVE
+infraware cve trends                     # Vulnerability trends
+
+SERVER COMMANDS:
+infraware server start                   # Start web dashboard
+infraware server start --port <number>   # Start on custom port
+infraware server api                     # API-only mode
+infraware server status                  # Server status
+infraware server stop                    # Stop server
+
+GLOBAL FLAGS:
+--help                                   # Show help
+--version                               # Show version
+--debug                                 # Enable debug mode
+
+================================================================================
+QUICK REFERENCE EXAMPLES
+================================================================================
+
+# Basic workflow
+terraform plan -out=plan.out
+terraform show -json plan.out > plan.json
+infraware scan plan.json
+infraware cost-analysis analyze plan.json --realtime
+
+# Security-focused scan
+infraware scan plan.json --severity HIGH --remediation --format json
+
+# Cost optimization workflow
+infraware cost-analysis analyze plan.json --optimize --breakdown --region us-west-2
+
+# CVE research workflow
+infraware cve download
+infraware cve search "S3 encryption"
+infraware scan plan.json --format json | jq '.vulnerabilities[] | select(.references.cve | length > 0)'
+
+# CI/CD integration
+infraware scan plan.json --format json --severity HIGH > security-results.json
+infraware cost-analysis analyze plan.json --format csv > cost-results.csv
+
+# Team collaboration
+infraware server start --port 8080
+# Access web interface at http://localhost:8080
+
+================================================================================
+END OF GUIDE
+================================================================================
+
+For more information:
+- GitHub: https://github.com/Awez123/Infraware
+- Documentation: https://infraware.readthedocs.io
+- Issues: https://github.com/Awez123/Infraware/issues
+- Community: https://github.com/Awez123/Infraware/discussions
+
+InfraWare v2.0 - Enterprise Infrastructure Security & Cost Platform
+Made with ❤️ by the InfraWare Team

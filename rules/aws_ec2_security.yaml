@@ -1,0 +1,75 @@
+# AWS EC2 Instance Security Rules
+- id: AWS-EC2-001
+  title: "EC2 Instance Without Detailed Monitoring"
+  description: "EC2 instance does not have detailed monitoring enabled"
+  severity: LOW
+  category: "Monitoring"
+  resource_types:
+    - aws_instance
+  conditions:
+    - path: "monitoring"
+      operator: "equals"
+      value: false
+  remediation: "Enable detailed monitoring for EC2 instances"
+  references:
+    - "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-cloudwatch.html"
+
+- id: AWS-EC2-002
+  title: "EC2 Instance Without IMDSv2"
+  description: "EC2 instance allows IMDSv1 which is less secure than IMDSv2"
+  severity: MEDIUM
+  category: "Instance Security"
+  resource_types:
+    - aws_instance
+  conditions:
+    - path: "metadata_options.http_tokens"
+      operator: "not_equals"
+      value: "required"
+  remediation: "Require IMDSv2 by setting http_tokens to required"
+  references:
+    - "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html"
+
+- id: AWS-EC2-003
+  title: "EC2 Instance Root Volume Not Encrypted"
+  description: "EC2 instance root volume is not encrypted"
+  severity: HIGH
+  category: "Encryption"
+  resource_types:
+    - aws_instance
+  conditions:
+    - path: "root_block_device.encrypted"
+      operator: "equals"
+      value: false
+  remediation: "Enable encryption for EC2 root volumes"
+  references:
+    - "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html"
+
+- id: AWS-EC2-004
+  title: "EC2 Instance With Public IP"
+  description: "EC2 instance has a public IP address increasing attack surface"
+  severity: MEDIUM
+  category: "Network Security"
+  resource_types:
+    - aws_instance
+  conditions:
+    - path: "associate_public_ip_address"
+      operator: "equals"
+      value: true
+  remediation: "Avoid assigning public IPs unless necessary, use NAT gateway instead"
+  references:
+    - "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_NAT_Instance.html"
+
+- id: AWS-EC2-005
+  title: "EC2 Instance Using Default Security Group"
+  description: "EC2 instance is using the default security group"
+  severity: MEDIUM
+  category: "Network Security"
+  resource_types:
+    - aws_instance
+  conditions:
+    - path: "vpc_security_group_ids[*]"
+      operator: "contains"
+      value: "default"
+  remediation: "Create custom security groups instead of using default"
+  references:
+    - "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/security-group-rules.html"

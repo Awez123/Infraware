@@ -1,0 +1,39 @@
+name: infraware
+version: '2.0.0'
+summary: Enterprise Infrastructure Security & Cost Platform
+description: |
+  InfraWare is a comprehensive CLI tool for infrastructure security scanning,
+  cost analysis, and vulnerability management across multi-cloud environments.
+  
+  Features:
+  - Real-time security scanning for Terraform, CloudFormation, and Kubernetes
+  - Multi-cloud cost analysis with accurate pricing
+  - CVE database management and vulnerability correlation
+  - Web interface and API for team collaboration
+  
+grade: stable
+confinement: strict
+base: core20
+
+apps:
+  infraware:
+    command: bin/infraware
+    environment:
+      PYTHONPATH: $SNAP/lib/python3.8/site-packages
+    plugs:
+      - home
+      - network
+      - network-bind
+
+parts:
+  infraware:
+    plugin: python
+    source: .
+    python-requirements:
+      - requirements.txt
+    stage-packages:
+      - python3-dev
+      - python3-pip
+    override-build: |
+      snapcraftctl build
+      pip install -e .

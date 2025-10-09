@@ -1,0 +1,410 @@
+{
+  "format_version": "1.1",
+  "terraform_version": "1.5.0",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_instance.web_server",
+          "mode": "managed",
+          "type": "aws_instance",
+          "name": "web_server",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 1,
+          "values": {
+            "ami": "ami-0c02fb55956c7d316",
+            "associate_public_ip_address": true,
+            "instance_type": "t3.large",
+            "key_name": "production-key",
+            "monitoring": true,
+            "security_groups": null,
+            "subnet_id": "subnet-12345",
+            "tags": {
+              "Environment": "Production",
+              "Name": "WebServer",
+              "Project": "ECommerce"
+            },
+            "user_data": "#!/bin/bash\nyum update -y\nyum install -y httpd\nsystemctl start httpd\nsystemctl enable httpd\necho '<h1>Production Web Server</h1>' > /var/www/html/index.html"
+          }
+        },
+        {
+          "address": "aws_db_instance.main",
+          "mode": "managed",
+          "type": "aws_db_instance",
+          "name": "main",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 1,
+          "values": {
+            "allocated_storage": 500,
+            "auto_minor_version_upgrade": true,
+            "backup_retention_period": 7,
+            "backup_window": "03:00-04:00",
+            "db_name": "production",
+            "engine": "mysql",
+            "engine_version": "8.0.32",
+            "instance_class": "db.r5.xlarge",
+            "maintenance_window": "sun:04:00-sun:05:00",
+            "multi_az": true,
+            "publicly_accessible": false,
+            "storage_encrypted": true,
+            "storage_type": "gp3",
+            "tags": {
+              "Environment": "Production",
+              "Name": "ProductionDB"
+            }
+          }
+        },
+        {
+          "address": "aws_elasticache_cluster.redis",
+          "mode": "managed",
+          "type": "aws_elasticache_cluster",
+          "name": "redis",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "cluster_id": "production-redis",
+            "engine": "redis",
+            "node_type": "cache.r6g.large",
+            "num_cache_nodes": 3,
+            "parameter_group_name": "default.redis7",
+            "port": 6379,
+            "tags": {
+              "Environment": "Production",
+              "Name": "ProductionRedis"
+            }
+          }
+        },
+        {
+          "address": "aws_lb.application",
+          "mode": "managed",
+          "type": "aws_lb",
+          "name": "application",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "enable_deletion_protection": false,
+            "internal": false,
+            "load_balancer_type": "application",
+            "name": "production-alb",
+            "tags": {
+              "Environment": "Production",
+              "Name": "ProductionALB"
+            }
+          }
+        },
+        {
+          "address": "aws_lambda_function.api_processor",
+          "mode": "managed",
+          "type": "aws_lambda_function",
+          "name": "api_processor",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "function_name": "production-api-processor",
+            "handler": "index.handler",
+            "memory_size": 1024,
+            "runtime": "python3.11",
+            "timeout": 60,
+            "tags": {
+              "Environment": "Production",
+              "Name": "APIProcessor"
+            }
+          }
+        },
+        {
+          "address": "aws_s3_bucket.data_lake",
+          "mode": "managed",
+          "type": "aws_s3_bucket",
+          "name": "data_lake",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "bucket": "production-data-lake-2025",
+            "tags": {
+              "Environment": "Production",
+              "Name": "DataLake",
+              "Backup": "Required"
+            }
+          }
+        },
+        {
+          "address": "aws_eks_cluster.production",
+          "mode": "managed",
+          "type": "aws_eks_cluster",
+          "name": "production",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "name": "production-eks",
+            "version": "1.27",
+            "tags": {
+              "Environment": "Production",
+              "Name": "ProductionEKS"
+            }
+          }
+        },
+        {
+          "address": "aws_dynamodb_table.user_sessions",
+          "mode": "managed",
+          "type": "aws_dynamodb_table",
+          "name": "user_sessions",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 1,
+          "values": {
+            "billing_mode": "ON_DEMAND",
+            "hash_key": "user_id",
+            "name": "user-sessions",
+            "range_key": "session_id",
+            "tags": {
+              "Environment": "Production",
+              "Name": "UserSessions"
+            }
+          }
+        },
+        {
+          "address": "aws_kinesis_stream.events",
+          "mode": "managed",
+          "type": "aws_kinesis_stream",
+          "name": "events",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 1,
+          "values": {
+            "name": "production-events",
+            "shard_count": 5,
+            "retention_period": 168,
+            "tags": {
+              "Environment": "Production",
+              "Name": "EventStream"
+            }
+          }
+        },
+        {
+          "address": "aws_api_gateway_rest_api.main",
+          "mode": "managed",
+          "type": "aws_api_gateway_rest_api",
+          "name": "main",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "name": "production-api",
+            "description": "Production API Gateway",
+            "tags": {
+              "Environment": "Production",
+              "Name": "ProductionAPI"
+            }
+          }
+        },
+        {
+          "address": "azurerm_virtual_machine.app_server",
+          "mode": "managed",
+          "type": "azurerm_virtual_machine",
+          "name": "app_server",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "schema_version": 0,
+          "values": {
+            "name": "production-app-vm",
+            "vm_size": "Standard_D4s_v3",
+            "tags": {
+              "Environment": "Production",
+              "Role": "Application"
+            }
+          }
+        },
+        {
+          "address": "azurerm_sql_database.production",
+          "mode": "managed",
+          "type": "azurerm_sql_database",
+          "name": "production",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "schema_version": 0,
+          "values": {
+            "name": "production-database",
+            "edition": "Premium",
+            "service_objective_name": "P2",
+            "max_size_bytes": "268435456000",
+            "tags": {
+              "Environment": "Production",
+              "Backup": "Required"
+            }
+          }
+        },
+        {
+          "address": "azurerm_storage_account.data",
+          "mode": "managed",
+          "type": "azurerm_storage_account",
+          "name": "data",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "schema_version": 2,
+          "values": {
+            "name": "proddatastorage2025",
+            "account_tier": "Premium",
+            "account_replication_type": "GRS",
+            "tags": {
+              "Environment": "Production",
+              "Purpose": "DataStorage"
+            }
+          }
+        },
+        {
+          "address": "azurerm_function_app.processor",
+          "mode": "managed",
+          "type": "azurerm_function_app",
+          "name": "processor",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "schema_version": 0,
+          "values": {
+            "name": "production-processor-func",
+            "tags": {
+              "Environment": "Production",
+              "Function": "DataProcessor"
+            }
+          }
+        },
+        {
+          "address": "azurerm_kubernetes_cluster.production",
+          "mode": "managed",
+          "type": "azurerm_kubernetes_cluster",
+          "name": "production",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "schema_version": 0,
+          "values": {
+            "name": "production-aks",
+            "tags": {
+              "Environment": "Production",
+              "Service": "AKS"
+            }
+          }
+        },
+        {
+          "address": "google_compute_instance.web",
+          "mode": "managed",
+          "type": "google_compute_instance",
+          "name": "web",
+          "provider_name": "registry.terraform.io/hashicorp/google",
+          "schema_version": 6,
+          "values": {
+            "name": "production-web-instance",
+            "machine_type": "n2-standard-4",
+            "zone": "us-central1-a",
+            "labels": {
+              "environment": "production",
+              "role": "webserver"
+            }
+          }
+        },
+        {
+          "address": "google_sql_database_instance.production",
+          "mode": "managed",
+          "type": "google_sql_database_instance",
+          "name": "production",
+          "provider_name": "registry.terraform.io/hashicorp/google",
+          "schema_version": 0,
+          "values": {
+            "name": "production-postgres",
+            "database_version": "POSTGRES_14",
+            "region": "us-central1",
+            "settings": [
+              {
+                "tier": "db-n1-standard-4",
+                "disk_size": 200,
+                "disk_type": "PD_SSD"
+              }
+            ]
+          }
+        },
+        {
+          "address": "google_storage_bucket.assets",
+          "mode": "managed",
+          "type": "google_storage_bucket",
+          "name": "assets",
+          "provider_name": "registry.terraform.io/hashicorp/google",
+          "schema_version": 0,
+          "values": {
+            "name": "production-assets-gcp-2025",
+            "location": "US",
+            "storage_class": "STANDARD",
+            "labels": {
+              "environment": "production",
+              "purpose": "assets"
+            }
+          }
+        },
+        {
+          "address": "google_bigquery_dataset.analytics",
+          "mode": "managed",
+          "type": "google_bigquery_dataset",
+          "name": "analytics",
+          "provider_name": "registry.terraform.io/hashicorp/google",
+          "schema_version": 0,
+          "values": {
+            "dataset_id": "production_analytics",
+            "location": "US",
+            "description": "Production analytics dataset",
+            "labels": {
+              "environment": "production"
+            }
+          }
+        },
+        {
+          "address": "google_cloudfunctions_function.data_processor",
+          "mode": "managed",
+          "type": "google_cloudfunctions_function",
+          "name": "data_processor",
+          "provider_name": "registry.terraform.io/hashicorp/google",
+          "schema_version": 0,
+          "values": {
+            "name": "production-data-processor",
+            "runtime": "python311",
+            "available_memory_mb": 512,
+            "timeout": 300,
+            "labels": {
+              "environment": "production",
+              "function": "data-processor"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "aws_instance.web_server",
+      "mode": "managed",
+      "type": "aws_instance",
+      "name": "web_server",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "ami": "ami-0c02fb55956c7d316",
+          "instance_type": "t3.large",
+          "monitoring": true,
+          "tags": {
+            "Environment": "Production",
+            "Name": "WebServer"
+          }
+        }
+      }
+    }
+  ],
+  "configuration": {
+    "provider_config": {
+      "aws": {
+        "name": "aws",
+        "full_name": "registry.terraform.io/hashicorp/aws",
+        "version_constraint": "~> 5.0"
+      },
+      "azurerm": {
+        "name": "azurerm",
+        "full_name": "registry.terraform.io/hashicorp/azurerm",
+        "version_constraint": "~> 3.0"
+      },
+      "google": {
+        "name": "google",
+        "full_name": "registry.terraform.io/hashicorp/google",
+        "version_constraint": "~> 4.0"
+      }
+    }
+  }
+}

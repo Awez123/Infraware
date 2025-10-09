@@ -1,8 +1,9 @@
-# in infraware/commands/rules.py
+# in src/infraware/commands/rules.py
 
 import yaml
 import typer
 import os
+import json # <-- New import for JSON output
 from typing_extensions import Annotated
 from rich.console import Console
 from rich.table import Table
@@ -15,22 +16,36 @@ console = Console()
 
 @app.command("list")
 def list_rules(
-    rules_dir: Annotated[str, typer.Option("--rules-dir", help="Path to the directory containing rule files.")] = "rules"
+    rules_dir: Annotated[str, typer.Option("--rules-dir", help="Path to the directory containing rule files.")] = "rules",
+    # --- New option for output format ---
+    output: Annotated[str, typer.Option("--output", help="Output format ('console' or 'json').")] = "console"
 ):
     """Lists all available rules in the specified directory."""
-    typer.echo(f"Listing rules from '{rules_dir}'...\n")
+    if output == "console":
+        typer.echo(f"Listing rules from '{rules_dir}'...\n")
+        
     rules = load_rules_from_directory(rules_dir)
     
     if not rules:
-        typer.secho("No rules found.", fg=typer.colors.YELLOW)
+        if output == "console":
+            typer.secho("No rules found.", fg=typer.colors.YELLOW)
+        else:
+            print("[]") # Print an empty JSON array if no rules are found
         raise typer.Exit()
 
-    table = Table("Rule ID", "Severity", "Resource", "Description")
-    for rule in rules:
-        table.add_row(rule.get('id'), rule.get('severity'), rule.get('resource'), rule.get('description'))
-    
-    console.print(table)
+    # --- New conditional output logic ---
+    if output == "json":
+        # Print the raw list of rules as a JSON object
+        print(json.dumps(rules, indent=2))
+    else:
+        # The existing logic to print a beautiful table
+        table = Table("Rule ID", "Severity", "Resource", "Description")
+        for rule in rules:
+            table.add_row(rule.get('id'), rule.get('severity'), rule.get('resource'), rule.get('description'))
+        
+        console.print(table)
 
+# (The 'validate' and 'create' commands remain exactly the same as before)
 @app.command("validate")
 def validate_rules(
     rules_dir: Annotated[str, typer.Option("--rules-dir", help="Path to the directory containing rule files.")] = "rules"
@@ -49,10 +64,10 @@ def validate_rules(
             filepath = os.path.join(rules_dir, filename)
             try:
                 with open(filepath, 'r') as f:
-                    rules = yaml.safe_load(f)
-                    if not isinstance(rules, list):
+                    rules_in_file = yaml.safe_load(f)
+                    if not isinstance(rules_in_file, list):
                         raise ValueError("File must contain a list of rules.")
-                    for i, rule in enumerate(rules):
+                    for i, rule in enumerate(rules_in_file):
                         if not required_keys.issubset(rule.keys()):
                             raise ValueError(f"Rule #{i+1} is missing required keys.")
                 typer.secho(f"  ✔ {filename} - OK", fg=typer.colors.GREEN)

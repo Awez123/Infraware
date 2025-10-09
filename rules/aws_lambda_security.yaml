@@ -1,0 +1,74 @@
+# AWS Lambda Security Rules
+- id: AWS-LAMBDA-001
+  title: "Lambda Function Without Dead Letter Queue"
+  description: "Lambda function does not have a dead letter queue configured"
+  severity: MEDIUM
+  category: "Error Handling"
+  resource_types:
+    - aws_lambda_function
+  conditions:
+    - path: "dead_letter_config"
+      operator: "not_exists"
+  remediation: "Configure dead letter queue for Lambda functions"
+  references:
+    - "https://docs.aws.amazon.com/lambda/latest/dg/invocation-async.html#dlq"
+
+- id: AWS-LAMBDA-002
+  title: "Lambda Function With Overly Permissive Execution Role"
+  description: "Lambda function execution role has excessive permissions"
+  severity: HIGH
+  category: "Access Management"
+  resource_types:
+    - aws_lambda_function
+  conditions:
+    - path: "role"
+      operator: "contains"
+      value: "AdministratorAccess"
+  remediation: "Create specific IAM roles with minimal required permissions"
+  references:
+    - "https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html"
+
+- id: AWS-LAMBDA-003
+  title: "Lambda Function Without VPC Configuration"
+  description: "Lambda function accessing VPC resources should be in VPC"
+  severity: MEDIUM
+  category: "Network Security"
+  resource_types:
+    - aws_lambda_function
+  conditions:
+    - path: "vpc_config"
+      operator: "not_exists"
+  remediation: "Configure VPC settings for Lambda functions accessing VPC resources"
+  references:
+    - "https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html"
+
+- id: AWS-LAMBDA-004
+  title: "Lambda Function Without Environment Variable Encryption"
+  description: "Lambda function environment variables are not encrypted"
+  severity: MEDIUM
+  category: "Encryption"
+  resource_types:
+    - aws_lambda_function
+  conditions:
+    - path: "environment.variables"
+      operator: "exists"
+    - path: "kms_key_arn"
+      operator: "not_exists"
+  remediation: "Encrypt Lambda environment variables using KMS"
+  references:
+    - "https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-encryption"
+
+- id: AWS-LAMBDA-005
+  title: "Lambda Function With High Memory Allocation"
+  description: "Lambda function has very high memory allocation which may indicate misconfiguration"
+  severity: LOW
+  category: "Resource Management"
+  resource_types:
+    - aws_lambda_function
+  conditions:
+    - path: "memory_size"
+      operator: "greater_than"
+      value: 3008
+  remediation: "Review memory allocation and optimize if necessary"
+  references:
+    - "https://docs.aws.amazon.com/lambda/latest/dg/configuration-memory.html"
