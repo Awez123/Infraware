@@ -1,4 +1,4 @@
-# 🛡️ InfraWare - Enterprise Infrastructure Security & Cost Platform# 🛡️ InfraWare - Enterprise Infrastructure Security & Cost Platform
+# InfraWare - Enterprise Infrastructure Security & Cost Platform# InfraWare - Enterprise Infrastructure Security & Cost Platform
 
 
 
@@ -6,11 +6,11 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
-[![Version](https://img.shields.io/badge/version-2.0.0-green.svg)](https://github.com/Awez123/Infraware)[![Version](https://img.shields.io/badge/version-2.0.0-green.svg)](https://github.com/Awez123/Infraware)
+[![CLI Tool](https://img.shields.io/badge/CLI-Tool-green.svg)](https://github.com/Awez123/Infraware)[![CLI Tool](https://img.shields.io/badge/CLI-Tool-green.svg)](https://github.com/Awez123/Infraware)
 
 
 
-**InfraWare** is an enterprise-grade Infrastructure as Code (IaC) security scanner with integrated CVE database and container security capabilities. It combines infrastructure vulnerability detection with cost analysis to provide comprehensive cloud security insights.**InfraWare** is an enterprise-grade Infrastructure as Code (IaC) security scanner with integrated CVE database and container security capabilities. It combines infrastructure vulnerability detection with cost analysis to provide comprehensive cloud security insights.
+> 🛡️ **Real-time infrastructure security scanning, cost analysis, and vulnerability management for multi-cloud environments**> 🛡️ **Real-time infrastructure security scanning, cost analysis, and vulnerability management for multi-cloud environments**
 
 
 
@@ -20,355 +20,739 @@
 
 ### Installation### Installation
 
+
+
 ```bash```bash
 
-# Clone the repository# Clone the repository
+# Install from PyPI (recommended)# Install from PyPI (recommended)
+
+pip install infrawarepip install infraware
+
+
+
+# Or install from source# Or install from source
 
 git clone https://github.com/Awez123/Infraware.gitgit clone https://github.com/Awez123/Infraware.git
 
 cd Infrawarecd Infraware
 
-
-
-# Install dependencies# Install dependencies
-
 pip install -e .pip install -e .
-
-
-
-# Verify installation# Verify installation
-
-infraware --helpinfraware --help
 
 ``````
 
 
 
-### Basic Usage### Basic Usage
+### First Scan### First Scan
+
+
 
 ```bash```bash
 
-# Scan Terraform plan for security issues# Scan Terraform plan for security issues
+# Scan your Terraform plan# Scan your Terraform plan
 
-infraware scan terraform-plan.jsoninfraware scan terraform-plan.json
-
-
-
-# Comprehensive security scan with CVE correlation# Comprehensive security scan with CVE correlation
-
-infraware comprehensive ./infrastructureinfraware comprehensive ./infrastructure
+infraware scan terraform.jsoninfraware scan terraform.json
 
 
 
-# Update CVE database# Update CVE database
+# Analyze costs in real-time# Analyze costs in real-time
 
-infraware cve-updateinfraware cve-update
+infraware cost-analysis analyze terraform.json --realtimeinfraware cost-analysis analyze terraform.json --realtime
 
 
 
-# View database statistics# View database statistics
+# Check CVE database# Check CVE database
 
-infraware cve-statsinfraware cve-stats
+infraware cve statsinfraware cve stats
 
 ``````
 
 
 
-## 🎯 Key Features
+## 📋 Prerequisites## 📋 Prerequisites
 
 
 
-### 🔍 Infrastructure Security## 🚀 Key Features## 🚀 Key Features
+- **Python 3.8+**- **Python 3.8+**
 
-- **Multi-Cloud IaC Scanning**: Terraform, CloudFormation, Kubernetes YAML
+- **Internet connection** (for real-time pricing and CVE updates)- **Internet connection** (for real-time pricing and CVE updates)
 
-- **CVE Integration**: 10,000+ vulnerabilities with real-time updates
+- **Terraform files** (.tf, .json) or **CloudFormation** (.yaml, .json)- **Terraform files** (.tf, .json) or **CloudFormation** (.yaml, .json)
 
-- **Risk Scoring**: Advanced severity assessment and scoring
 
-- **Compliance Mapping**: CIS Controls and industry standards### 🔍 Infrastructure Security### 🔍 Infrastructure Security
 
-- **35+ AWS Security Rules**: Comprehensive coverage across RDS, EC2, IAM, Lambda, ELB, CloudTrail, KMS
+## 🛠️ Installation Methods## 🛠️ Installation Methods
 
-- **Multi-Cloud IaC Scanning**: Terraform, CloudFormation, Kubernetes YAML- **Multi-Cloud IaC Scanning**: Terraform, CloudFormation, Kubernetes YAML
 
-### 🐳 Container Security
 
-- **Dockerfile Analysis**: Security best practices and vulnerability detection- **CVE Integration**: 2,000+ vulnerabilities with real-time updates- **CVE Integration**: 2,000+ vulnerabilities with real-time updates
+### Method 1: PyPI Installation (Recommended)### Method 1: PyPI Installation (Recommended)
 
-- **Container Image Scanning**: Layer-by-layer vulnerability analysis
+```bash```bash
 
-- **Runtime Security**: Running container assessment- **Risk Scoring**: Advanced severity assessment and scoring- **Risk Scoring**: Advanced severity assessment and scoring
+pip install infrawarepip install infraware
 
-- **Secret Detection**: Hardcoded credentials and sensitive data identification
+infraware welcome  # Verify installationinfraware welcome  # Verify installation
 
-- **Compliance Mapping**: CIS Controls and industry standards- **Compliance Mapping**: CIS Controls and industry standards
+``````
+
+
+
+### Method 2: Homebrew (macOS/Linux)### Method 2: Homebrew (macOS/Linux)
+
+```bash```bash
+
+brew tap awez123/infrawarebrew tap awez123/infraware
+
+brew install infrawarebrew install infraware
+
+``````
+
+
+
+### Method 3: Binary Downloads### Method 3: Binary Downloads
+
+Download pre-compiled binaries from [Releases](https://github.com/Awez123/Infraware/releases)Download pre-compiled binaries from [Releases](https://github.com/Awez123/Infraware/releases)
+
+
+
+### Method 4: Docker### Method 4: Docker
+
+```bash```bash
+
+docker run -v $(pwd):/workspace awez123/infraware scan /workspace/terraform.jsondocker run -v $(pwd):/workspace awez123/infraware scan /workspace/terraform.json
+
+``````
+
+
+
+### Method 5: From Source### Method 5: From Source
+
+```bash```bash
+
+git clone https://github.com/Awez123/Infraware.gitgit clone https://github.com/Awez123/Infraware.git
+
+cd Infrawarecd Infraware
+
+pip install -e .pip install -e .
+
+``````
+
+
+
+## 🎯 Core Features## 🎯 Core Features
+
+
+
+### 🛡️ Security Scanning### 🛡️ Security Scanning
+
+```bash```bash
+
+# Basic security scan
+
+infraware scan infrastructure.json# Scan Terraform plan for security issues# Scan Terraform plan for security issues
+
+
+
+# Comprehensive analysis with all checksinfraware scan terraform-plan.jsoninfraware scan terraform-plan.json
+
+infraware scan infrastructure.json --comprehensive
+
+
+
+# Filter by severity
+
+infraware scan infrastructure.json --severity HIGH# Comprehensive security scan with CVE correlation# Comprehensive security scan with CVE correlation
+
+
+
+# Custom rules directoryinfraware comprehensive ./infrastructureinfraware comprehensive ./infrastructure
+
+infraware scan infrastructure.json --rules-dir ./custom-rules/
+
+
+
+# JSON output for CI/CD integration
+
+infraware scan infrastructure.json --format json# Update CVE database# Update CVE database
+
+```
+
+infraware cve-updateinfraware cve-update
 
 ### 💰 Cost Analysis
 
+```bash
+
+# Real-time cost analysis
+
+infraware cost-analysis analyze infrastructure.json --realtime# View database statistics# View database statistics
+
+
+
+# Regional pricinginfraware cve-statsinfraware cve-stats
+
+infraware cost-analysis analyze infrastructure.json --region us-west-2
+
+``````
+
+# Cost breakdown with optimization
+
+infraware cost-analysis analyze infrastructure.json --breakdown --optimize
+
+
+
+# Multi-cloud comparison## 🎯 Key Features
+
+infraware cost-analysis analyze infrastructure.json --compare
+
+```
+
+
+
+### 🔍 CVE Management### 🔍 Infrastructure Security## 🚀 Key Features## 🚀 Key Features
+
+```bash
+
+# Download CVE database- **Multi-Cloud IaC Scanning**: Terraform, CloudFormation, Kubernetes YAML
+
+infraware cve download
+
+- **CVE Integration**: 10,000+ vulnerabilities with real-time updates
+
+# Check database stats
+
+infraware cve stats- **Risk Scoring**: Advanced severity assessment and scoring
+
+
+
+# Search for specific vulnerabilities- **Compliance Mapping**: CIS Controls and industry standards### 🔍 Infrastructure Security### 🔍 Infrastructure Security
+
+infraware cve search "RDS encryption"
+
+- **35+ AWS Security Rules**: Comprehensive coverage across RDS, EC2, IAM, Lambda, ELB, CloudTrail, KMS
+
+# Research specific CVE- **Multi-Cloud IaC Scanning**: Terraform, CloudFormation, Kubernetes YAML
+
+infraware cve research CVE-2023-12345- **CVE Integration**: 10,000+ vulnerabilities with real-time updates
+
+```- **Risk Scoring**: Advanced severity assessment and scoring
+
+- **Secret Detection**: Hardcoded credentials and sensitive data identification
+
+### 🌐 Web Interface- **Compliance Mapping**: CIS Controls and industry standards
+
+```bash
+
+# Start web dashboard### 💰 Cost Analysis
+
+infraware server start
+
 - **Multi-Cloud Cost Estimation**: AWS, Azure, GCP pricing
 
-- **Resource Optimization**: Cost-aware security recommendations
+# Custom port- **Resource Optimization**: Cost-aware security recommendations
 
-- **Regional Pricing**: Location-specific cost calculations### 🐳 Container Security### 🐳 Container Security
+infraware server start --port 8080- **Regional Pricing**: Location-specific cost calculations
 
 - **Usage-Based Modeling**: Flexible time-based cost projections
 
-- **Dockerfile Analysis**: Security best practices and vulnerability detection- **Dockerfile Analysis**: Security best practices and vulnerability detection
+# API-only mode
 
-### 🔄 Real-Time Intelligence
+infraware server api### 🔄 Real-Time Intelligence
 
-- **CVE Database**: Auto-updating vulnerability intelligence from NVD and GitHub- **Container Image Scanning**: Layer-by-layer vulnerability analysis- **Container Image Scanning**: Layer-by-layer vulnerability analysis
+```
 
-- **Threat Correlation**: Infrastructure resources mapped to known vulnerabilities
+- **CVE Database**: Auto-updating vulnerability intelligence from NVD and GitHub
 
-- **Security Scoring**: Dynamic risk assessment based on current threat landscape- **Runtime Security**: Running container assessment- **Runtime Security**: Running container assessment
+## 📁 Supported File Formats- **Threat Correlation**: Infrastructure resources mapped to known vulnerabilities
+
+- **Security Scoring**: Dynamic risk assessment based on current threat landscape
+
+| Format | Extension | Description |
+
+|--------|-----------|-------------|## 📋 Command Reference
+
+| Terraform Plans | `.json` | `terraform plan -out=plan.json && terraform show -json plan.json > plan.json` |
+
+| Terraform Files | `.tf` | Raw Terraform configuration files |
+
+| CloudFormation | `.yaml`, `.yml`, `.json` | AWS CloudFormation templates |
+
+| Kubernetes | `.yaml`, `.yml` | Kubernetes manifests || Command | Description | Example |
 
 
 
-## 📋 Command Reference- **Secret Detection**: Hardcoded credentials and sensitive data identification- **Secret Detection**: Hardcoded credentials and sensitive data identification
+## 🔧 Configuration|---------|-------------|---------|
 
 
 
-| Command | Description | Example |
+### Environment Variables| `scan` | Infrastructure vulnerability scanning | `infraware scan plan.json` |### 💰 Cost Analysis### 💰 Cost Analysis
 
-|---------|-------------|---------|
+```bash
 
-| `scan` | Infrastructure vulnerability scanning | `infraware scan plan.json` |### 💰 Cost Analysis### 💰 Cost Analysis
+# API Keys (optional - uses free tiers by default)| `comprehensive` | Multi-faceted security scan | `infraware comprehensive ./infrastructure` |
 
-| `comprehensive` | Multi-faceted security scan | `infraware comprehensive ./infrastructure` |
+export INFRAWARE_AWS_ACCESS_KEY=your_key
 
-| `cost-analysis` | Cloud cost estimation | `infraware cost-analysis plan.tf --region us-east-1` |- **Multi-Cloud Cost Estimation**: AWS, Azure, GCP pricing- **Multi-Cloud Cost Estimation**: AWS, Azure, GCP pricing
+export INFRAWARE_AZURE_SUBSCRIPTION_ID=your_id| `cost-analysis` | Cloud cost estimation | `infraware cost-analysis plan.tf --region us-east-1` |- **Multi-Cloud Cost Estimation**: AWS, Azure, GCP pricing- **Multi-Cloud Cost Estimation**: AWS, Azure, GCP pricing
+
+export INFRAWARE_GCP_PROJECT_ID=your_project
 
 | `cve-update` | Update CVE database | `infraware cve-update` |
 
-| `cve-bulk-download` | Download enterprise CVE database | `infraware cve-bulk-download` |- **Resource Optimization**: Cost-aware security recommendations- **Resource Optimization**: Cost-aware security recommendations
+# Database location
 
-| `cve-search` | Search CVE database | `infraware cve-search "kubernetes" --severity CRITICAL` |
-
-| `cve-stats` | CVE database statistics | `infraware cve-stats` |- **Regional Pricing**: Location-specific cost calculations- **Regional Pricing**: Location-specific cost calculations
-
-| `container-scan` | Container image scanning | `infraware container-scan alpine:latest` |
-
-| `dockerfile-scan` | Dockerfile security analysis | `infraware dockerfile-scan Dockerfile` |- **Usage-Based Modeling**: Flexible time-based cost projections- **Usage-Based Modeling**: Flexible time-based cost projections
-
-| `container-runtime` | Running container analysis | `infraware container-runtime web-app` |
-
-| `secrets` | Secret detection | `infraware secrets ./src --format json` |
+export INFRAWARE_DB_PATH=~/.infraware/database.db| `cve-bulk-download` | Download enterprise CVE database | `infraware cve-bulk-download` |- **Resource Optimization**: Cost-aware security recommendations- **Resource Optimization**: Cost-aware security recommendations
 
 
 
-## 🔧 Detailed Usage Examples### 🔄 Real-Time Intelligence### 🔄 Real-Time Intelligence
+# Custom rules directory| `cve-search` | Search CVE database | `infraware cve-search "kubernetes" --severity CRITICAL` |
+
+export INFRAWARE_RULES_DIR=~/.infraware/rules/
+
+```| `cve-stats` | CVE database statistics | `infraware cve-stats` |- **Regional Pricing**: Location-specific cost calculations- **Regional Pricing**: Location-specific cost calculations
 
 
 
-### Infrastructure Scanning- **CVE Database**: Auto-updating vulnerability intelligence from NVD and GitHub- **CVE Database**: Auto-updating vulnerability intelligence from NVD and GitHub
+### Configuration File| `container-scan` | Container image scanning | `infraware container-scan alpine:latest` |
+
+Create `~/.infraware/config.yaml`:
+
+```yaml| `dockerfile-scan` | Dockerfile security analysis | `infraware dockerfile-scan Dockerfile` |- **Usage-Based Modeling**: Flexible time-based cost projections- **Usage-Based Modeling**: Flexible time-based cost projections
+
+# InfraWare Configuration
+
+database:| `container-runtime` | Running container analysis | `infraware container-runtime web-app` |
+
+  path: "~/.infraware/cve_database.db"
+
+  auto_update: true| `secrets` | Secret detection | `infraware secrets ./src --format json` |
 
 
 
-#### Basic Terraform Scan- **Threat Correlation**: Infrastructure resources mapped to known vulnerabilities- **Threat Correlation**: Infrastructure resources mapped to known vulnerabilities
+pricing:
+
+  cache_ttl: 3600  # 1 hour
+
+  fallback_enabled: true## 🔧 Detailed Usage Examples### 🔄 Real-Time Intelligence### 🔄 Real-Time Intelligence
+
+  regions:
+
+    - us-east-1
+
+    - us-west-2
+
+    - eu-west-1### Infrastructure Scanning- **CVE Database**: Auto-updating vulnerability intelligence from NVD and GitHub- **CVE Database**: Auto-updating vulnerability intelligence from NVD and GitHub
+
+
+
+scanning:
+
+  default_severity: "MEDIUM"
+
+  max_files: 100#### Basic Terraform Scan- **Threat Correlation**: Infrastructure resources mapped to known vulnerabilities- **Threat Correlation**: Infrastructure resources mapped to known vulnerabilities
+
+  timeout: 300
 
 ```bash
 
-# Generate Terraform plan and scan- **Security Scoring**: Dynamic risk assessment based on current threat landscape- **Security Scoring**: Dynamic risk assessment based on current threat landscape
+rules:
 
-terraform plan -out=tfplan.binary
+  custom_dir: "~/.infraware/rules/"# Generate Terraform plan and scan- **Security Scoring**: Dynamic risk assessment based on current threat landscape- **Security Scoring**: Dynamic risk assessment based on current threat landscape
 
-terraform show -json tfplan.binary > tfplan.json
+  ignore_dir: "~/.infraware/ignores/"
 
-infraware scan tfplan.json
-
-```## 📦 Installation*(Tip: You can use a tool like [ScreenToGif](https://www.screentogif.com/) or [Peek](https://github.com/phw/peek) to create a simple GIF of your tool in action and replace the placeholder above.)*
+```terraform plan -out=tfplan.binary
 
 
 
-#### Comprehensive AWS Security Scan
+## 🔄 CI/CD Integrationterraform show -json tfplan.binary > tfplan.json
 
-```bash
 
-# Scan with comprehensive AWS security rules (35+ rules)```bash- **Security Scanning**: Detect vulnerabilities and misconfigurations in Terraform files
 
-infraware scan comprehensive_aws_test.json
+### GitHub Actionsinfraware scan tfplan.json
 
-# Clone the repository
+```yaml
 
-# Expected output: Detection of 27 vulnerabilities across:
+name: InfraWare Security Scan```## 📦 Installation*(Tip: You can use a tool like [ScreenToGif](https://www.screentogif.com/) or [Peek](https://github.com/phw/peek) to create a simple GIF of your tool in action and replace the placeholder above.)*
 
-# - RDS instances (encryption, public access, backups)git clone https://github.com/ikramhyderi/Infraware.git- **Cost Analysis**: Calculate monthly costs for cloud resources with region-aware pricing## ✨ Key Features
+on: [push, pull_request]
 
-# - EC2 instances (monitoring, IMDSv2, encryption)
 
-# - IAM policies (admin access, overprivileged users)cd Infraware
 
-# - Lambda functions (DLQ, roles, VPC, encryption)
+jobs:
 
-# - ALB/ELB (HTTPS, logging, redirects)- **Multiple Format Support**: Works with Terraform (.tf), JSON, and YAML files
+  security-scan:#### Comprehensive AWS Security Scan
 
-# - CloudTrail (logging, encryption, validation)
+    runs-on: ubuntu-latest
+
+    steps:```bash
+
+      - uses: actions/checkout@v3
+
+      - name: Setup Python# Scan with comprehensive AWS security rules (35+ rules)```bash- **Security Scanning**: Detect vulnerabilities and misconfigurations in Terraform files
+
+        uses: actions/setup-python@v4
+
+        with:infraware scan comprehensive_aws_test.json
+
+          python-version: '3.9'
+
+      # Clone the repository
+
+      - name: Install InfraWare
+
+        run: pip install infraware# Expected output: Detection of 27 vulnerabilities across:
+
+      
+
+      - name: Generate Terraform Plan# - RDS instances (encryption, public access, backups)git clone https://github.com/ikramhyderi/Infraware.git- **Cost Analysis**: Calculate monthly costs for cloud resources with region-aware pricing## ✨ Key Features
+
+        run: |
+
+          terraform init# - EC2 instances (monitoring, IMDSv2, encryption)
+
+          terraform plan -out=plan.out
+
+          terraform show -json plan.out > plan.json# - IAM policies (admin access, overprivileged users)cd Infraware
+
+      
+
+      - name: Security Scan# - Lambda functions (DLQ, roles, VPC, encryption)
+
+        run: infraware scan plan.json --format json --severity HIGH
+
+      # - ALB/ELB (HTTPS, logging, redirects)- **Multiple Format Support**: Works with Terraform (.tf), JSON, and YAML files
+
+      - name: Cost Analysis
+
+        run: infraware cost-analysis analyze plan.json --realtime# - CloudTrail (logging, encryption, validation)
+
+```
 
 # - KMS/Secrets (rotation, encryption)# Install dependencies
 
+### GitLab CI
+
+```yaml```
+
+infraware_scan:
+
+  stage: securitypip install -r requirements.txt- **Rule-Based Engine**: Extensible rules system with confidence scoring* **Accurate Plan Scanning**: Analyzes the JSON output of `terraform plan` to understand the exact state of your infrastructure, including modules and variables.
+
+  image: python:3.9
+
+  script:#### Multi-Format Support
+
+    - pip install infraware
+
+    - terraform plan -out=plan.out```bash
+
+    - terraform show -json plan.out > plan.json
+
+    - infraware scan plan.json --format json# Terraform JSON
+
+  artifacts:
+
+    reports:infraware scan infrastructure.json# Install InfraWare- **Professional CLI**: Clean command-line interface with detailed help* **Extensible Rule Engine**: Define security and quality checks in simple, human-readable YAML files.
+
+      junit: infraware-results.xml
+
 ```
 
-pip install -r requirements.txt- **Rule-Based Engine**: Extensible rules system with confidence scoring* **Accurate Plan Scanning**: Analyzes the JSON output of `terraform plan` to understand the exact state of your infrastructure, including modules and variables.
 
-#### Multi-Format Support
+
+### Jenkins Pipeline# CloudFormation YAMLpip install -e .
+
+```groovy
+
+pipeline {infraware scan cloudformation-template.yaml
+
+    agent any
+
+    stages {```* **Professional CLI**: A full-featured command-line interface with commands for scanning and rule management.
+
+        stage('InfraWare Scan') {
+
+            steps {# Kubernetes YAML
+
+                sh 'pip install infraware'
+
+                sh 'terraform plan -out=plan.out'infraware scan k8s-deployment.yaml
+
+                sh 'terraform show -json plan.out > plan.json'
+
+                sh 'infraware scan plan.json --format json > scan-results.json'```
+
+                archiveArtifacts artifacts: 'scan-results.json'
+
+            }## 🎯 Quick Start## Requirements* **Interactive Rule Creation**: Use `infraware rules create` to be guided through making new rules.
+
+        }
+
+    }### CVE Database Operations
+
+}
+
+```
+
+
+
+## 🧪 Examples#### Update Database
+
+
+
+### Scanning AWS Infrastructure```bash### Infrastructure Scanning* **Rule Validation**: Use `infraware rules validate` to check your custom rule files for correct syntax.
 
 ```bash
 
-# Terraform JSON
+# Generate Terraform plan# Quick update (recent CVEs)
 
-infraware scan infrastructure.json# Install InfraWare- **Professional CLI**: Clean command-line interface with detailed help* **Extensible Rule Engine**: Define security and quality checks in simple, human-readable YAML files.
+terraform plan -out=aws-plan.out
 
-
-
-# CloudFormation YAMLpip install -e .
-
-infraware scan cloudformation-template.yaml
-
-```* **Professional CLI**: A full-featured command-line interface with commands for scanning and rule management.
-
-# Kubernetes YAML
-
-infraware scan k8s-deployment.yaml
-
-```
-
-## 🎯 Quick Start## Requirements* **Interactive Rule Creation**: Use `infraware rules create` to be guided through making new rules.
-
-### CVE Database Operations
+terraform show -json aws-plan.out > aws-plan.jsoninfraware cve-update```bash
 
 
 
-#### Update Database
+# Scan for security issues
 
-```bash### Infrastructure Scanning* **Rule Validation**: Use `infraware rules validate` to check your custom rule files for correct syntax.
-
-# Quick update (recent CVEs)
-
-infraware cve-update```bash
-
-
+infraware scan aws-plan.json --comprehensive
 
 # Force update# Scan Terraform plan- Python 3.8 or higher* **Ignore Findings**: Baseline your infrastructure by ignoring specific findings using simple ignore files.
 
-infraware cve-update --force
+# Analyze costs
 
-infraware scan terraform-plan.json
-
-# Enterprise download (100K+ CVEs, 3 years)
-
-infraware cve-bulk-download- Terraform (for Terraform file analysis)* **Formatted Output**: Clean, color-coded console output makes it easy to spot issues.
+infraware cost-analysis analyze aws-plan.json --region us-east-1 --breakdowninfraware cve-update --force
 
 ```
 
-# Scan with JSON output
+infraware scan terraform-plan.json
 
-#### Search and Statistics
+### Multi-Cloud Cost Comparison
 
-```bashinfraware scan infrastructure.tf --format json
+```bash# Enterprise download (100K+ CVEs, 3 years)
+
+# Scan multi-cloud infrastructure
+
+infraware cost-analysis analyze multi-cloud-plan.json --compare --optimizeinfraware cve-bulk-download- Terraform (for Terraform file analysis)* **Formatted Output**: Clean, color-coded console output makes it easy to spot issues.
+
+
+
+# Output with cost breakdown```
+
+infraware cost-analysis analyze multi-cloud-plan.json --format json --breakdown
+
+```# Scan with JSON output
+
+
+
+### Custom Security Rules#### Search and Statistics
+
+```bash
+
+# Create custom rules directory```bashinfraware scan infrastructure.tf --format json
+
+mkdir -p ~/.infraware/rules/
 
 # Search for specific vulnerabilities
 
-infraware cve-search "apache" --severity HIGH --limit 10```
+# Add custom rule file
 
+cat > ~/.infraware/rules/custom-s3.yaml << EOFinfraware cve-search "apache" --severity HIGH --limit 10```
 
+rules:
 
-# Search by technology## Installation## 📋 Prerequisites
+  - id: CUSTOM-S3-001
 
-infraware cve-search "kubernetes" --severity CRITICAL
+    title: "S3 Bucket Custom Policy"
+
+    severity: HIGH# Search by technology## Installation## 📋 Prerequisites
+
+    resource_type: aws_s3_bucket
+
+    condition: bucket_policy_missinginfraware cve-search "kubernetes" --severity CRITICAL
+
+EOF
 
 ### Cost Analysis
 
-# View database statistics
+# Scan with custom rules
+
+infraware scan terraform.json --rules-dir ~/.infraware/rules/# View database statistics
+
+```
 
 infraware cve-stats```bash
 
+## 🐛 Troubleshooting
 
+
+
+### Common Issues
 
 # Expected output:# Analyze costs for AWS us-east-1
 
-# Total CVEs: 12,547
+#### Installation Problems
 
-# Recent CVEs (30 days): 234infraware cost-analysis terraform-plan.tf --region us-east-1 --hours 7201. Clone the repository:* [Python](https://www.python.org/downloads/) (version 3.8 or higher)
+```bash# Total CVEs: 12,547
 
-# Database Size: 45.2 MB
+# Update pip first
+
+pip install --upgrade pip# Recent CVEs (30 days): 234infraware cost-analysis terraform-plan.tf --region us-east-1 --hours 7201. Clone the repository:* [Python](https://www.python.org/downloads/) (version 3.8 or higher)
+
+
+
+# Install with user flag# Database Size: 45.2 MB
+
+pip install --user infraware
 
 # Severity Distribution: Critical(15%), High(25%), Medium(45%), Low(15%)
+
+# Force reinstall
+
+pip install --force-reinstall infraware```
 
 ```
 
 # Multi-cloud cost analysis```bash* [Terraform](https://developer.hashicorp.com/terraform/downloads) (version 1.0 or higher)
 
-### Container Security
+#### Permission Issues
 
-infraware cost-analysis multi-cloud.json --provider aws --region us-west-2
+```bash### Container Security
 
-#### Container Image Scanning
+# Linux/macOS
 
-```bash```git clone https://github.com/your-username/infraware.git
-
-# Scan Docker image
-
-infraware container-scan nginx:latest
+sudo chown -R $USER ~/.infraware/infraware cost-analysis multi-cloud.json --provider aws --region us-west-2
 
 
 
-# Scan with layer analysis### CVE Database Operationscd infraware## 🚀 Installation
+# Windows#### Container Image Scanning
 
-infraware container-scan ubuntu:20.04 --layers
+icacls "%USERPROFILE%\.infraware" /grant "%USERNAME%":F /T
+
+``````bash```git clone https://github.com/your-username/infraware.git
+
+
+
+#### Network Issues# Scan Docker image
 
 ```bash
 
-# Output to JSON
+# Check connectivityinfraware container-scan nginx:latest
 
-infraware container-scan alpine:3.14 --format json# Update CVE database```
+infraware cve download --debug
+
+
+
+# Use offline mode
+
+infraware scan terraform.json --offline# Scan with layer analysis### CVE Database Operationscd infraware## 🚀 Installation
 
 ```
 
-infraware cve-update
+infraware container-scan ubuntu:20.04 --layers
+
+### Debug Mode
+
+```bash```bash
+
+# Enable verbose logging
+
+infraware --debug scan terraform.json# Output to JSON
+
+
+
+# Check configurationinfraware container-scan alpine:3.14 --format json# Update CVE database```
+
+infraware config validate
+
+```
+
+# Database diagnostics
+
+infraware cve stats --verboseinfraware cve-update
+
+```
 
 #### Dockerfile Analysis
 
+## 🤝 Contributing
+
 ```bashTo install and use the InfraWare CLI, follow these steps:
+
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 # Scan Dockerfile for security issues
 
-infraware dockerfile-scan Dockerfile# Search for specific vulnerabilities
+### Development Setup
 
+```bashinfraware dockerfile-scan Dockerfile# Search for specific vulnerabilities
 
+git clone https://github.com/Awez123/Infraware.git
 
-# Common findings:infraware cve-search "apache" --severity HIGH --limit 52. Install the package:
+cd Infraware
 
-# - Running as root user
+python -m venv venv
 
-# - Using ADD instead of COPY
+source venv/bin/activate  # Linux/macOS# Common findings:infraware cve-search "apache" --severity HIGH --limit 52. Install the package:
+
+# or
+
+venv\Scripts\activate  # Windows# - Running as root user
+
+pip install -e ".[dev]"
+
+pre-commit install# - Using ADD instead of COPY
+
+```
 
 # - No health check defined
 
-# - Hardcoded secrets# View database statistics```bash1.  **Clone the Repository**:
+### Running Tests
+
+```bash# - Hardcoded secrets# View database statistics```bash1.  **Clone the Repository**:
+
+pytest tests/
+
+pytest tests/ --cov=infraware```
 
 ```
 
 infraware cve-stats
 
+## 📜 License
+
 #### Runtime Container Security
+
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ```bash```pip install -e .    ```bash
 
+## 🔗 Links
+
 # Scan running container
 
-infraware container-runtime container-name
+- **Documentation**: [https://infraware.readthedocs.io](https://infraware.readthedocs.io)
+
+- **Issues**: [https://github.com/Awez123/Infraware/issues](https://github.com/Awez123/Infraware/issues)infraware container-runtime container-name
+
+- **Discussions**: [https://github.com/Awez123/Infraware/discussions](https://github.com/Awez123/Infraware/discussions)
+
+- **Security**: [SECURITY.md](SECURITY.md)
 
 
 
-# Scan by container ID### Container Security```    git clone [https://github.com/your-username/infraware.git](https://github.com/your-username/infraware.git)
-
-infraware container-runtime abc123def456
-
-``````bash
+## ⭐ Star History# Scan by container ID### Container Security```    git clone [https://github.com/your-username/infraware.git](https://github.com/your-username/infraware.git)
 
 
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Awez123/Infraware&type=Date)](https://star-history.com/#Awez123/Infraware&Date)infraware container-runtime abc123def456
+
+
+
+---``````bash
+
+
+
+**Made with ❤️ by the InfraWare Team**
 
 ### Secret Detection# Scan Dockerfile for security issues    cd infraware
 

@@ -23,6 +23,7 @@ MANIFEST
 
 # Virtual Environment
 venv/
+infraware-venv/
 env/
 ENV/
 
@@ -52,6 +53,13 @@ test_*.py
 test_dockerfile
 logs/
 tmp/
+
+# Development files
+create_sample_db.py
+DEPLOYMENT_SUMMARY.md
+
+# Test files that shouldn't be tracked
+test_terraform_code/Dockerfile
 
 # Build artifacts
 build/
